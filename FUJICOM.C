@@ -9,7 +9,22 @@ PORT *port;
 
 void fujicom_init(unsigned char p)
 {
-	port = port_open(0x2f8,11);
+	int base=0x3f8, i=12;
+
+	switch(p)
+	{
+		default:
+		case 1:
+			base = 0x3f8;
+			i = 12;
+			break;
+		case 2:
+			base = 0x2f8;
+			i = 11;
+			break;
+	}
+
+	port = port_open(base,i);
 	port_set(port,9600,'N',8,1);
 }
 
