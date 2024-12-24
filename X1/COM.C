@@ -301,7 +301,6 @@ int port_available(PORT *port)
  */
 int port_getc(PORT *port)
 {
-  delay(1);
   if ( port->in.write_index == port->in.read_index )
     return( -1 );
   else

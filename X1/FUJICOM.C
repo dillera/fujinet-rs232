@@ -121,7 +121,7 @@ char fujicom_command_write(cmdFrame_t *c, unsigned char *buf, unsigned short len
 
 	/* Write the checksum */
 	ck=fujicom_cksum(buf,len);
-	port_putc(ck,port);
+	port_put(port,&ck,1);
 
 	/* Wait for ACK/NACK */
 	r = port_getc_sync(port);
@@ -131,12 +131,6 @@ char fujicom_command_write(cmdFrame_t *c, unsigned char *buf, unsigned short len
 
 	/* Wait for COMPLETE/ERROR */
 	return port_getc_sync(port); 
-}
-
-void fujicom_flush(void)
-{
-	while (port_available(port))
-		port_getc(port);
 }
 
 void fujicom_done(void)
