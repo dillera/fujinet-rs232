@@ -35,7 +35,7 @@ void sat(char *lat_s, char *lon_s)
 	for (i=0;i<8;i++)
 	{
 		b=satellite[i];
-		for (j=0;j<16;j++)
+		for (j=0;j<8;j++)
 		{
 			if (b<0)
 				gr_pset(x+j,y+i,3);

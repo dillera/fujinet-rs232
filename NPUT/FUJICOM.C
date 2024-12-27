@@ -1,0 +1,139 @@
+/**
+ * #FUJINET Low Level Routines
+ */
+
+#include "com.h"
+#include "fujicom.h"
+
+PORT *port;
+
+void fujicom_init(unsigned char p)
+{
+	int base=0x3f8, i=12;
+
+	switch(p)
+	{
+		default:
+		case 1:
+			base = 0x3f8;
+			i = 12;
+			break;
+		case 2:
+			base = 0x2f8;
+			i = 11;
+			break;
+	}
+
+	port = port_open(base,i);
+	port_set(port,9600,'N',8,1);
+}
+
+unsigned char fujicom_cksum(unsigned char *buf, unsigned short len)
+{
+	unsigned int chk = 0;
+	int i=0;
+
+	for (i=0;i<len;i++)
+		chk = ((chk+buf[i]) >> 8) + ((chk + buf[i]) & 0xFF);
+
+	return (unsigned char)chk;
+}
+
+/**
+ * @brief Internal function, send command, get response.
+ *
+ * @param c ptr to command frame to send
+ * @return 'A'ck, or 'N'ak.
+ */
+char _fujicom_send_command(cmdFrame_t *c)
+{
+	int i=-1;
+	unsigned char *cc = (unsigned char *)c;
+
+	/* Calculate checksum and place in frame */
+	c->dcksum = fujicom_cksum(cc,4);
+
+	/* Assert DTR to indicate start of command frame */
+	port_set_dtr(port,1);
+
+	/* Write command frame */
+	port_put(port,cc,sizeof(cmdFrame_t));
+
+	/* Desert DTR to indicate end of command frame */
+	port_set_dtr(port,0);
+
+	i=port_getc_sync(port);
+
+	return (unsigned char)i;
+}
+
+char fujicom_command(cmdFrame_t *c)
+{
+	_fujicom_send_command(c);
+
+	return port_getc_sync(port);
+}
+
+char fujicom_command_read(cmdFrame_t *c, unsigned char *buf, unsigned short len)
+{
+	int r; /* response */
+	int i;
+
+	r = _fujicom_send_command(c);
+
+	if (r == 'N')
+		return r; /* Return NAK */
+
+	/* Get COMPLETE/ERROR */
+
+	r = port_getc_sync(port);
+
+	if (r == 'C')
+	{
+		/* Complete, get payload */
+
+		for (i=0;i<len;i++)
+		{
+			buf[i]=port_getc_sync(port);
+		}
+
+		/* Get Checksum byte, we don't use it. */
+		port_getc_sync(port);
+	}
+
+	/* Otherwise, we got an error, return it. */
+	return (unsigned char)r;
+}
+
+char fujicom_command_write(cmdFrame_t *c, unsigned char *buf, unsigned short len)
+{
+	unsigned char r; /* response */
+	int i;
+	unsigned char ck;
+
+	r = _fujicom_send_command(c);
+
+	if (r == 'N')
+		return r;
+
+	/* Write the payload */
+	port_put(port,buf,len);
+
+	/* Write the checksum */
+	ck=fujicom_cksum(buf,len);
+	port_put(port,&ck,1);
+
+	/* Wait for ACK/NACK */
+	r = port_getc_sync(port);
+	
+	if (r == 'N')
+		return r;
+
+	/* Wait for COMPLETE/ERROR */
+	return port_getc_sync(port); 
+}
+
+void fujicom_done(void)
+{
+	port_close(port);
+}

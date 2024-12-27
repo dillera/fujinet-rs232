@@ -1,0 +1,61 @@
+!define BLANK ""
+D:\Workspace\fujinet-rs232\ISS\COM.obj : D:\Workspace\fujinet-rs232\ISS\COM.&
+C .AUTODEPEND
+ @D:
+ cd D:\Workspace\fujinet-rs232\ISS
+ *wcc COM.C -i="C:\WATCOM/h" -w4 -e25 -zq -od -d2 -bt=dos -fo=.obj -ml
+
+D:\Workspace\fujinet-rs232\ISS\FETCH.obj : D:\Workspace\fujinet-rs232\ISS\FE&
+TCH.C .AUTODEPEND
+ @D:
+ cd D:\Workspace\fujinet-rs232\ISS
+ *wcc FETCH.C -i="C:\WATCOM/h" -w4 -e25 -zq -od -d2 -bt=dos -fo=.obj -ml
+
+D:\Workspace\fujinet-rs232\ISS\FUJICOM.obj : D:\Workspace\fujinet-rs232\ISS\&
+FUJICOM.C .AUTODEPEND
+ @D:
+ cd D:\Workspace\fujinet-rs232\ISS
+ *wcc FUJICOM.C -i="C:\WATCOM/h" -w4 -e25 -zq -od -d2 -bt=dos -fo=.obj -ml
+
+D:\Workspace\fujinet-rs232\ISS\GRLIB.obj : D:\Workspace\fujinet-rs232\ISS\GR&
+LIB.C .AUTODEPEND
+ @D:
+ cd D:\Workspace\fujinet-rs232\ISS
+ *wcc GRLIB.C -i="C:\WATCOM/h" -w4 -e25 -zq -od -d2 -bt=dos -fo=.obj -ml
+
+D:\Workspace\fujinet-rs232\ISS\ISS.obj : D:\Workspace\fujinet-rs232\ISS\ISS.&
+C .AUTODEPEND
+ @D:
+ cd D:\Workspace\fujinet-rs232\ISS
+ *wcc ISS.C -i="C:\WATCOM/h" -w4 -e25 -zq -od -d2 -bt=dos -fo=.obj -ml
+
+D:\Workspace\fujinet-rs232\ISS\MAP.obj : D:\Workspace\fujinet-rs232\ISS\MAP.&
+C .AUTODEPEND
+ @D:
+ cd D:\Workspace\fujinet-rs232\ISS
+ *wcc MAP.C -i="C:\WATCOM/h" -w4 -e25 -zq -od -d2 -bt=dos -fo=.obj -ml
+
+D:\Workspace\fujinet-rs232\ISS\OSD.obj : D:\Workspace\fujinet-rs232\ISS\OSD.&
+C .AUTODEPEND
+ @D:
+ cd D:\Workspace\fujinet-rs232\ISS
+ *wcc OSD.C -i="C:\WATCOM/h" -w4 -e25 -zq -od -d2 -bt=dos -fo=.obj -ml
+
+D:\Workspace\fujinet-rs232\ISS\SAT.obj : D:\Workspace\fujinet-rs232\ISS\SAT.&
+C .AUTODEPEND
+ @D:
+ cd D:\Workspace\fujinet-rs232\ISS
+ *wcc SAT.C -i="C:\WATCOM/h" -w4 -e25 -zq -od -d2 -bt=dos -fo=.obj -ml
+
+D:\Workspace\fujinet-rs232\ISS\iss.exe : D:\Workspace\fujinet-rs232\ISS\COM.&
+obj D:\Workspace\fujinet-rs232\ISS\FETCH.obj D:\Workspace\fujinet-rs232\ISS\&
+FUJICOM.obj D:\Workspace\fujinet-rs232\ISS\GRLIB.obj D:\Workspace\fujinet-rs&
+232\ISS\ISS.obj D:\Workspace\fujinet-rs232\ISS\MAP.obj D:\Workspace\fujinet-&
+rs232\ISS\OSD.obj D:\Workspace\fujinet-rs232\ISS\SAT.obj .AUTODEPEND
+ @D:
+ cd D:\Workspace\fujinet-rs232\ISS
+ @%write iss.lk1 FIL COM.obj,FETCH.obj,FUJICOM.obj,GRLIB.obj,ISS.obj,MAP.obj&
+,OSD.obj,SAT.obj
+ @%append iss.lk1 
+ *wlink name iss d all sys dos op m op maxe=25 op q op symf @iss.lk1
+

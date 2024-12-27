@@ -1,0 +1,3 @@
+FETCH.C(60): Warning! W131: No prototype found for function 'atol'
+FETCH.C(60): Warning! W308: The function 'atol' without prototyped parameters called
+FETCH.C(60): Note! I2002: 'atol' defined in: FETCH.C(60)
