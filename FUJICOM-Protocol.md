@@ -80,6 +80,14 @@ In each of the three types, the protocol starts by the computer dropping DTRL lo
 | 0x77   | Network Device 7       |
 | 0x78   | Network Device 8       |
 
+### Commands
+
+Commands for device 0x70: 
+https://github.com/FujiNetWIFI/fujinet-firmware/wiki/SIO-Commands-for-Device-ID-%2470
+
+Commands for device 0x71-0x78:
+https://github.com/FujiNetWIFI/fujinet-firmware/wiki/SIO-Commands-for-Device-IDs-%2471-to-%2478
+
 ### Calculating 8-bit Checksum
 
 The 8 bit checksum is a simple sum, with any carry explicitly ignored. The implementation used by the firmware is shown here:
