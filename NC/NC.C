@@ -35,9 +35,6 @@ int nc(char *s)
 	/* Open fujicom */
 	fujicom_init(2);
 
-		strcpy(username,"thomc");
-		strcpy(password,"e1xb64XC46");
-
 		c.ddev = 0x71;
 		c.dcomnd = 0xFD;
 		c.daux1 = c.daux2 = 0;
