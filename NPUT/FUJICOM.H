@@ -13,9 +13,8 @@ typedef struct		/* Command Frame */
 
 /**
  * @brief start fujicom
- * @param p COM port (1-4)
  */
-void fujicom_init(unsigned char p);
+void fujicom_init(void);
 
 /**
  * @brief calculate 8-bit checksum for cmdFrame_t.dcksum

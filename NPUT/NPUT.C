@@ -29,7 +29,7 @@ int nput(char *src, char *dst)
 	cmdFrame_t c;
 	unsigned long total=0;
 
-	fujicom_init(2);
+	fujicom_init();
 
 	/* Perform OPEN command */
 	c.ddev   = 0x71;
