@@ -36,8 +36,9 @@ int nget(char *src, char *dst)
 	int err  = 0;
 	cmdFrame_t c;
 	unsigned long total=0;
+	char *username=NULL, *password=NULL;
 
-	fujicom_init(2);
+	fujicom_init();
 
 	if ((src[0] != 'N') && (src[1] != ':'))
 	{
@@ -50,6 +51,33 @@ int nget(char *src, char *dst)
 		printf("\nCould not open destination file. Terminating.\n");
 		return 2;
 	}
+
+	username=getenv("FUJI_USER");
+	password=getenv("FUJI_PASS");
+
+	if (username)
+	{
+		/* Perform username command */
+		c.ddev = 0x71;
+		c.dcomnd = 0xFD;
+		c.daux1 = c.daux2 = 0x00;
+		memset(url,0,sizeof(url));
+		strcpy(url,username);
+		fujicom_command_write(&c,url,sizeof(url));
+	}
+
+	if (password)
+	{
+		/* Perform password command */
+		c.ddev = 0x71;
+		c.dcomnd = 0xFE;
+		c.daux1 = c.daux2 = 0x00;
+		memset(url,0,sizeof(url));
+		strcpy(url,password);
+		fujicom_command_write(&c,url,sizeof(url));
+	}
+
+	memset(url,0,sizeof(url));
 
 	/* Perform OPEN command */
 	c.ddev   = 0x71;
