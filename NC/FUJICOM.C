@@ -2,15 +2,22 @@
  * #FUJINET Low Level Routines
  */
 
-#include <dos.h>
 #include "com.h"
 #include "fujicom.h"
 
 PORT *port;
 
-void fujicom_init(unsigned char p)
+void fujicom_init(void)
 {
 	int base=0x3f8, i=12;
+	int baud=9600;
+	int p=1;
+
+	if (getenv("FUJI_PORT"))
+		p=atoi(getenv("FUJI_PORT"));
+
+	if (getenv("FUJI_BAUD"))
+		baud=atoi(getenv("FUJI_BAUD"));
 
 	switch(p)
 	{
@@ -26,7 +33,7 @@ void fujicom_init(unsigned char p)
 	}
 
 	port = port_open(base,i);
-	port_set(port,9600,'N',8,1);
+	port_set(port,baud,'N',8,1);
 }
 
 unsigned char fujicom_cksum(unsigned char *buf, unsigned short len)
@@ -134,7 +141,7 @@ char fujicom_command_write(cmdFrame_t *c, unsigned char *buf, unsigned short len
 	return port_getc_sync(port); 
 }
 
-unsigned char fujicom_net_available()
+unsigned char fujicom_net_available(void)
 {
 	if (!port)
 		return 0;

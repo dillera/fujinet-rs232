@@ -13,9 +13,8 @@ typedef struct		/* Command Frame */
 
 /**
  * @brief start fujicom
- * @param p COM port (1-4)
  */
-void fujicom_init(unsigned char p);
+void fujicom_init(void);
 
 /**
  * @brief calculate 8-bit checksum for cmdFrame_t.dcksum
@@ -47,11 +46,8 @@ char fujicom_command_read(cmdFrame_t *c, unsigned char *buf, unsigned short len)
  */
 char fujicom_command_write(cmdFrame_t *c, unsigned char *buf, unsigned short len);
 
-/** 
- * @brief Check RI interrupt for data available
- * @return Value of MSR ANDed against RI bit
- */
-unsigned char fujicom_net_available();
+unsigned char fujicom_net_available(void);
+
 
 /** 
  * @brief end fujicom

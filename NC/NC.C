@@ -33,7 +33,10 @@ int nc(char *s)
 	int err = 0;
 
 	/* Open fujicom */
-	fujicom_init(2);
+	fujicom_init();
+
+		strcpy(username,"thomc");
+		strcpy(password,"e1xb64XC46");
 
 		c.ddev = 0x71;
 		c.dcomnd = 0xFD;
