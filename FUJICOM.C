@@ -7,9 +7,17 @@
 
 PORT *port;
 
-void fujicom_init(unsigned char p)
+void fujicom_init(void)
 {
 	int base=0x3f8, i=12;
+	int baud=9600;
+	int p=1;
+
+	if (getenv("FUJI_PORT"))
+		p=atoi(getenv("FUJI_PORT"));
+
+	if (getenv("FUJI_BAUD"))
+		baud=atoi(getenv("FUJI_BAUD"));
 
 	switch(p)
 	{
@@ -25,7 +33,7 @@ void fujicom_init(unsigned char p)
 	}
 
 	port = port_open(base,i);
-	port_set(port,9600,'N',8,1);
+	port_set(port,baud,'N',8,1);
 }
 
 unsigned char fujicom_cksum(unsigned char *buf, unsigned short len)

@@ -1,4 +1,12 @@
 # fujinet-rs232
 Code for FujiNet RS-232 Version
 
-## RS232 Protocol 
+## FUJICOM Environment Variables
+
+The current code which is built against FUJICOM reacts to the following environment variables
+
+| Variable  | Default | Description                     |
+|-----------|---------|---------------------------------|
+| FUJI_PORT | 1       | The Serial port to use, 1 or 2. |
+| FUJI_BAUD | 9600    | The Baud rate to use.           |
+

@@ -5,7 +5,7 @@
  * @license GPL v. 3, see LICENSE for details
  */
 
-#include <fujicom.h>
+#include "fujicom.h"
 #include <dos.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,7 +31,7 @@ void main(void)
 	c.ddev = 0x45;
 	c.dcomnd = 0x9A;
 
-	fujicom_init(2);
+	fujicom_init();
 	reply = fujicom_command_read(&c,(unsigned char *)&t,sizeof(t));
 
 	if (reply != 'C')
