@@ -1,4 +1,0 @@
-OSD.C(14): Warning! W102: Parameter 1: Type mismatch (warning)
-OSD.C(14): Note! I2003: source conversion type is 'long'
-OSD.C(14): Note! I2004: target conversion type is 'unsigned long const *'
-OSD.C(14): Note! I2002: 'ctime' defined in: C:\WATCOM\h\time.h(162)

@@ -7,12 +7,13 @@
 
 #include <conio.h>
 #include <time.h>
+#include <dos.h>
 #include "grlib.h"
 #include "map.h"
 #include "sat.h"
 
 char lat[16], lon[16];
-long ts;
+unsigned long ts;
 int timeout=60000;
 
 void main()
@@ -27,7 +28,7 @@ void main()
 		map();
 		fetch(&lat,&lon,&ts);
 		osd(&lat,&lon,&ts);
-		sat(&lat,&lon);
+		sat((char *)&lat,(char *)&lon);
 		while (timeout--)
 		{
 			delay(1);

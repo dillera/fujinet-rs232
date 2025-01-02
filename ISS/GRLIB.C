@@ -31,7 +31,7 @@ int gr_color(char p, char c)
 	r.h.bh = 0x01;
 	r.h.bl = p;
 
-	int86(0x10,&r,0);
+	/* int86(0x10,&r,0); */
 
 	r.h.ah = 0x0b;
 	r.h.bh = 0x00;

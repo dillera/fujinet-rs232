@@ -1,2 +1,2 @@
-tcc -ml iss grlib map osd sat fetch fujicom com
+tcc -ml iss ftime grlib map osd sat fetch fujicom com
 

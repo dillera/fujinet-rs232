@@ -1,9 +1,0 @@
-ISS.C(28): Warning! W131: No prototype found for function 'fetch'
-ISS.C(29): Warning! W131: No prototype found for function 'osd'
-ISS.C(33): Warning! W131: No prototype found for function 'delay'
-ISS.C(28): Warning! W308: The function 'fetch' without prototyped parameters called
-ISS.C(28): Note! I2002: 'fetch' defined in: ISS.C(28)
-ISS.C(29): Warning! W308: The function 'osd' without prototyped parameters called
-ISS.C(29): Note! I2002: 'osd' defined in: ISS.C(29)
-ISS.C(33): Warning! W308: The function 'delay' without prototyped parameters called
-ISS.C(33): Note! I2002: 'delay' defined in: ISS.C(33)
