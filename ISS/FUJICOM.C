@@ -1,7 +1,8 @@
 /**
  * #FUJINET Low Level Routines
  */
-
+ 
+#include <stdlib.h>
 #include "com.h"
 #include "fujicom.h"
 
