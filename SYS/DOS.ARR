@@ -1,0 +1,25 @@
+s/DGROUP	group	_DATA,_BSS/DGROUP	group	_DATA,_BSS,_TEXT/
+s/assume	cs:_TEXT/assume cs:DGROUP/
+s/dw	@/dw	DGROUP:@/
+s/dw	_Init_cmd/dw DGROUP:_Init_cmd/
+s/dw	_Media_check_cmd/dw DGROUP:_Media_check_cmd/
+s/dw	_Build_bpb_cmd/dw DGROUP:_Build_bpb_cmd/
+s/dw	_Ioctl_input_cmd/dw DGROUP:_Ioctl_input_cmd/
+s/dw	_Input_cmd/dw DGROUP:_Input_cmd/
+s/dw	_Input_no_wait_cmd/dw DGROUP:_Input_no_wait_cmd/
+s/dw	_Input_status_cmd/dw DGROUP:_Input_status_cmd/
+s/dw	_Input_flush_cmd/dw DGROUP:_Input_flush_cmd/
+s/dw	_Output_cmd/dw DGROUP:_Output_cmd/
+s/dw	_Output_verify_cmd/dw DGROUP:_Output_verify_cmd/
+s/dw	_Output_status_cmd/dw DGROUP:_Output_status_cmd/
+s/dw	_Output_flush_cmd/dw DGROUP:_Output_flush_cmd/
+s/dw	_Ioctl_output_cmd/dw DGROUP:_Ioctl_output_cmd/
+s/dw	_Dev_open_cmd/dw DGROUP:_Dev_open_cmd/
+s/dw	_Dev_close_cmd/dw DGROUP:_Dev_close_cmd/
+s/dw	_Remove_media_cmd/dw DGROUP:_Remove_media_cmd/
+s/dw	_Ioctl_cmd/dw DGROUP:_Ioctl_cmd/
+s/dw	_Unknown_cmd/dw DGROUP:_Unknown_cmd/
+s/dw	_Get_l_d_map_cmd/dw DGROUP:_Get_l_d_map_cmd/
+s/dw	_Set_l_d_map_cmd/dw DGROUP:_Set_l_d_map_cmd/
+s/offset _/offset DGROUP:_/
+s/offset @/offset DGROUP:@/
