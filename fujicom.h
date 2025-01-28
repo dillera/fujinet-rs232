@@ -6,13 +6,40 @@
 #define _FUJICOM_H
 
 #include <stdint.h>
-typedef struct {                /* Command Frame */
-  uint8_t ddev;                 /* Destination Device */
-  uint8_t dcomnd;               /* Command */
-  uint8_t daux1;                /* Auxiliary Parameter 1 */
-  uint8_t daux2;                /* Auxiliary Parameter 2 */
-  uint8_t dcksum;               /* 8-bit checksum */
+
+// FIXME - get these constants and structs from
+//         fujinet-firmware/lib/bus/rs232/rs232.h instead of
+//         redefining them here
+
+typedef struct {               /* Command Frame */
+  uint8_t device;              /* Destination Device */
+  uint8_t comnd;               /* Command */
+  uint8_t aux1;                /* Auxiliary Parameter 1 */
+  uint8_t aux2;                /* Auxiliary Parameter 2 */
+  uint8_t cksum;               /* 8-bit checksum */
 } cmdFrame_t;
+
+enum {
+  DEVICEID_DISK                 = 0x31,
+  DEVICEID_DISK_LAST            = 0x3F,
+  DEVICEID_PRINTER              = 0x40,
+  DEVICEID_PRINTER_LAST         = 0x43,
+  DEVICEID_FN_VOICE             = 0x43,
+  DEVICEID_APETIME              = 0x45,
+  DEVICEID_RS232                = 0x50,
+  DEVICEID_RS2323_LAST          = 0x53,
+  DEVICEID_FUJINET              = 0x70,
+  DEVICEID_FN_NETWORK           = 0x71,
+  DEVICEID_FN_NETWORK_LAST      = 0x78,
+  DEVICEID_MIDI                 = 0x99,
+  DEVICEID_CPM                  = 0x5A,
+};
+
+enum {
+  APETIMECMD_GETTIME    = 0x93,
+  APETIMECMD_SETTZ      = 0x99,
+  APETIMECMD_GETTZTIME  = 0x9A,
+};
 
 /**
  * @brief start fujicom

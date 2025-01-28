@@ -69,7 +69,7 @@ char _fujicom_send_command(cmdFrame_t far *c)
 
 
   /* Calculate checksum and place in frame */
-  c->dcksum = fujicom_cksum(cc, 4);
+  c->cksum = fujicom_cksum(cc, 4);
 
   /* Assert DTR to indicate start of command frame */
   port_set_dtr(port, 1);

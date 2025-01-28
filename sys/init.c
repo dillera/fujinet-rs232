@@ -59,9 +59,8 @@ uint8_t get_set_time(uint8_t set_flag)
   uint16_t year_wcen;
 
 
-  // FIXME - use constants not hardcoded values
-  cmd.ddev = 0x45;
-  cmd.dcomnd = 0x9A;
+  cmd.device = DEVICEID_APETIME;
+  cmd.comnd = APETIMECMD_GETTZTIME;
 
   reply = fujicom_command_read(&cmd, (uint8_t *) &cur_time, sizeof(cur_time));
 
