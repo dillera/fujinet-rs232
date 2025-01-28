@@ -1,5 +1,3 @@
-#undef LOOPBACK_TEST
-
 #include "fujicom.h"
 #include "print.h"
 #include "dispatch.h"
@@ -10,6 +8,7 @@
 
 //#pragma data_seg("_CODE")
 
+// FIXME - use SIMPLE with year + century, not APETIME
 struct _tm {
   char tm_mday;
   char tm_month;
@@ -29,95 +28,69 @@ extern __segment getCS(void);
 #pragma aux getCS = \
     "mov ax, cs";
 
+uint8_t get_set_time(uint8_t set_flag);
+
 uint16_t Init_cmd(void)
 {
+  uint8_t err;
+
+
   printDTerm(hellomsg);
 
   fpRequest->req_type.init_req.end_ptr = MK_FP(getCS(), &transient_data);
 
-#ifdef LOOPBACK_TEST
-  {
-    uint16_t val;
-    PORT my_port;
-    PORT *port;
+  fujicom_init();
+
+  // FIXME - check if /NOTIME was passed on command line
+  err = get_set_time(1);
+
+  // If get_set_time returned error, FujiNet is probably not connected
+  if (err)
+    fujicom_done();
+
+  return 0;
+}
+
+/* Returns non-zero on error */
+uint8_t get_set_time(uint8_t set_flag)
+{
+  char reply = 0;
+  struct _tm cur_time;
+  uint16_t year_wcen;
 
 
-    port = port_open_static(&my_port, 0x3f8, 12);
+  // FIXME - use constants not hardcoded values
+  cmd.ddev = 0x45;
+  cmd.dcomnd = 0x9A;
 
-    strcpy(hellomsg, "ADDR  0x0000\r\n$");
-    byte_to_hex(&hellomsg[8], ((uint16_t) port) >> 8);
-    byte_to_hex(&hellomsg[10], (uint16_t) port);
-    printDTerm(hellomsg);
+  reply = fujicom_command_read(&cmd, (uint8_t *) &cur_time, sizeof(cur_time));
 
-    strcpy(hellomsg, "IIR   0x00\r\n$");
-    val = inp(port->uart_base + 2);     // Get IIR
-    byte_to_hex(&hellomsg[8], val);
-    printDTerm(hellomsg);
-
-    strcpy(hellomsg, "LINES 0x00\r\n$");
-
-    val = inp(port->uart_base + 6);     // Get modem lines
-    byte_to_hex(&hellomsg[8], val);
-    printDTerm(hellomsg);
-
-    outp(port->uart_base + 4, 8 + 0);   //0x0A);
-    val = inp(port->uart_base + 6);     // Get modem lines
-    byte_to_hex(&hellomsg[8], val);
-    printDTerm(hellomsg);
-
-    outp(port->uart_base + 4, 8 + 3);   //0x05);
-    val = inp(port->uart_base + 6);     // Get modem lines
-    byte_to_hex(&hellomsg[8], val);
-    printDTerm(hellomsg);
-
-    port_set(port, 9600, 'N', 8, 1);
-    //outp(port->uart_base + 4, 3 + 8);
-
-    {
-      int idx;
-
-
-      for (idx = 0; test_data[idx]; idx++) {
-        outp(port->uart_base, test_data[idx]);
-        for (;;) {
-          val = inp(port->uart_base + 5);
-          if (val & 1)
-            break;
-#if 0
-          strcpy(hellomsg, "LSR: 0x00\r\n$");
-          byte_to_hex(&hellomsg[7], val);
-          printDTerm(hellomsg);
-          break;
-#endif
-        }
-        //val = inp(port->uart_base);
-        val = port_getc(port);
-        strcpy(hellomsg, "RCV: 0x00\r\n$");
-        byte_to_hex(&hellomsg[7], val);
-        printDTerm(hellomsg);
-      }
-    }
+  if (reply != 'C') {
+    printDTerm("Could not read time from FujiNet.\r\nAborted.\r\n$");
+    return 1;
   }
-#else /* !LOOPBACK_TEST */
-  {
-    char reply = 0;
-    struct _tm cur_time;
 
+  year_wcen = cur_time.tm_year + 2000;
+  printDTerm("Current FujiNet date & time: $");
+  printDec(cur_time.tm_month, 2, '0');
+  printDTerm("/$");
+  printDec(cur_time.tm_mday, 2, '0');
+  printDTerm("/$");
+  printDec(year_wcen, 4, '0');
 
-    cmd.ddev = 0x45;
-    cmd.dcomnd = 0x9A;
+  printDTerm(" $");
 
-    fujicom_init();
-    reply = fujicom_command_read(&cmd, (uint8_t *) &cur_time, sizeof(cur_time));
+  printDec(cur_time.tm_hour, 2, '0');
+  printDTerm(":$");
+  printDec(cur_time.tm_min, 2, '0');
+  printDTerm(":$");
+  printDec(cur_time.tm_sec, 2, '0');
 
-    if (reply != 'C') {
-      printDTerm("Could not read time from FujiNet.\r\nAborted.\r\n$");
-      fujicom_done();
-      return 1;
-    }
+  printDTerm("\r\n$");
 
+  if (set_flag) {
     iregs.h.ah = 0x2B;
-    iregs.x.cx = cur_time.tm_year + 2000;
+    iregs.x.cx = year_wcen;
     iregs.h.dh = cur_time.tm_month;
     iregs.h.dl = cur_time.tm_mday;
 
@@ -132,19 +105,7 @@ uint16_t Init_cmd(void)
     intdos(&iregs, NULL);
 
     printDTerm("MS-DOS Time now set from FujiNet\r\n$");
-    strcpy(hellomsg, "DATE: 00/00/00\r\n$");
-    byte_to_decimal(&hellomsg[6], cur_time.tm_month);
-    byte_to_decimal(&hellomsg[9], cur_time.tm_mday);
-    byte_to_decimal(&hellomsg[12], cur_time.tm_year);
-    printDTerm(hellomsg);
-
-    strcpy(hellomsg, "TIME: 00:00:00\r\n$");
-    byte_to_decimal(&hellomsg[6], cur_time.tm_hour);
-    byte_to_decimal(&hellomsg[9], cur_time.tm_min);
-    byte_to_decimal(&hellomsg[12], cur_time.tm_sec);
-    printDTerm(hellomsg);
   }
-#endif /* LOOPBACK_TEST */
 
   return 0;
 }

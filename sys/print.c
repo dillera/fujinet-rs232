@@ -47,20 +47,22 @@ void printHex32(uint32_t val, uint16_t width, char leading)
 
 void printDec(uint16_t val, uint16_t width, char leading)
 {
-  uint16_t digits, tval;
+  uint16_t digits, tval, tens;
 
 
-  for (tval = val, digits = 0; tval; tval /= 10, digits++)
+  for (tval = val, digits = 0, tens = 1; tval; tval /= 10, digits++, tens *= 10)
     ;
   if (!digits)
     digits = 1;
+  tens /= 10;
 
   for (; digits < width; width--)
     printChar(leading);
 
   while (digits) {
     digits--;
-    printChar('0' + (val / (digits ? (digits * 10) : 1)) % 10);
+    printChar('0' + (val / tens) % 10);
+    tens /= 10;
   }
 
   return;
@@ -93,22 +95,5 @@ void dumpHex(uint8_t far *buffer, uint16_t count)
     printDTerm("|\r\n$");
   }
 
-  return;
-}
-
-void byte_to_hex(char *buffer, uint8_t byte)
-{
-  const char hex_digits[] = "0123456789ABCDEF";
-
-
-  buffer[0] = hex_digits[(byte >> 4) & 0xF];    // High nibble
-  buffer[1] = hex_digits[byte & 0xF];   // Low nibble
-  return;
-}
-
-void byte_to_decimal(char *buffer, uint8_t byte)
-{
-  buffer[0] = '0' + (byte / 10) % 10;
-  buffer[1] = '0' + byte % 10;
   return;
 }

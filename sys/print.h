@@ -25,8 +25,4 @@ extern void printHex32(uint32_t val, uint16_t width, char leading);
 extern void printDec(uint16_t val, uint16_t width, char leading);
 extern void dumpHex(uint8_t far *buffer, uint16_t count);
 
-// FIXME - get rid of these
-extern void byte_to_hex(char *buffer, uint8_t byte);
-extern void byte_to_decimal(char *buffer, uint8_t byte);
-
 #endif /* _PRINT_H */
