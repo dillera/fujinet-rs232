@@ -19,7 +19,7 @@ struct _tm {
 };
 
 cmdFrame_t cmd;
-union REGS iregs, oregs;
+union REGS iregs;
 
 static char hellomsg[] = "\r\FujiNet in Open Watcom C\r\n$";
 
@@ -93,7 +93,7 @@ uint8_t get_set_time(uint8_t set_flag)
     iregs.h.dh = cur_time.tm_month;
     iregs.h.dl = cur_time.tm_mday;
 
-    intdos(&iregs, &oregs);
+    intdos(&iregs, NULL);
 
     iregs.h.ah = 0x2D;
     iregs.h.ch = cur_time.tm_hour;
@@ -101,7 +101,7 @@ uint8_t get_set_time(uint8_t set_flag)
     iregs.h.dh = cur_time.tm_sec;
     iregs.h.dl = 0;
 
-    intdos(&iregs, &oregs);
+    intdos(&iregs, NULL);
 
     printDTerm("MS-DOS Time now set from FujiNet\r\n$");
   }
