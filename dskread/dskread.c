@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
   printf("fujicom_command_read(%i) for sector %u\n",
 	 fujicom_command_read(&cmd, buf, sizeof(buf)), sector);
 
-  for (i=0;i<sizeof(buf);i++) {
+  for (i = 0; i < sizeof(buf); i++) {
     printf("%02x ",buf[i]);
   }
 

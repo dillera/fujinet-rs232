@@ -1,1 +1,0 @@
-../fujicom.h

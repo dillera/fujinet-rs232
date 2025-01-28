@@ -2,15 +2,15 @@ TARGET  = dskread.exe
 AS      = wasm
 ASFLAGS = -0 -mt -bt=DOS
 CC      = wcc
-CFLAGS  = -0 -bt=dos -I.. -osh -zu
+CFLAGS  = -0 -bt=dos -I../fujicom -osh -zu
 LD	= wlink
-LDFLAGS = system dos
+LDFLAGS = SYSTEM dos LIBPATH ../fujicom
 
-CFILES  = dskread.c fujicom.c com.c
+CFILES  = dskread.c
 OBJS = $(CFILES:.c=.obj) $(AFILES:.asm=.obj)
 
 $(TARGET): $(OBJS)
-	$(LD) $(LDFLAGS) name $(TARGET) file {$(OBJS)}
+	$(LD) $(LDFLAGS) NAME $(TARGET) FILE {$(OBJS)} LIBRARY fujicoms.lib
 
 .c.obj: .AUTODEPEND
         $(CC) $(CFLAGS) -fo=$@ $<

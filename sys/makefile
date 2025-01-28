@@ -2,7 +2,7 @@ TARGET  = fujinet.sys
 AS      = wasm
 ASFLAGS = -0 -mt -bt=DOS
 CC      = wcc
-CFLAGS  = -0 -bt=dos -ms -I.. -s -osh -zu
+CFLAGS  = -0 -bt=dos -ms -I../fujicom -s -osh -zu
 LD	= wlink
 LDFLAGS = &
 	SYSTEM dos &
@@ -12,9 +12,10 @@ LDFLAGS = &
 	  clname CODE &
 	  clname BSS &
 	  clname INIT &
-	OPTION MAP
+	OPTION MAP &
+	LIBPATH ../fujicom
 
-CFILES  = commands.c dispatch.c init.c print.c fujicom.c com.c
+CFILES  = commands.c dispatch.c init.c print.c
 AFILES  = header.asm
 OBJS = $(CFILES:.c=.obj) $(AFILES:.asm=.obj)
 
@@ -24,8 +25,8 @@ $(TARGET): $(OBJS)
 	  statics &
 	  option start=Init_cmd_ &
 	  name $@ &
-	  library clibs.lib &
-	  file {$(OBJS)}
+	  file {$(OBJS)} &
+	  library {fujicoms.lib clibs.lib}
 
 init.obj: init.c .AUTODEPEND
 	$(CC) $(CFLAGS) -nt=_INIT -nc=INIT -fo=$@ $<
