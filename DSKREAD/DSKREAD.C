@@ -4,7 +4,7 @@
 #include "fujicom.h"
 #include "com.h"
 
-cmdFrame_t *cmd;
+cmdFrame_t cmd;
 
 unsigned char buf[512];
 
