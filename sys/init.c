@@ -30,14 +30,14 @@ extern __segment getCS(void);
 
 uint8_t get_set_time(uint8_t set_flag);
 
-uint16_t Init_cmd(void)
+uint16_t Init_cmd(SYSREQ *r_ptr)
 {
   uint8_t err;
 
 
   printDTerm(hellomsg);
 
-  fpRequest->req_type.init_req.end_ptr = MK_FP(getCS(), &transient_data);
+  r_ptr->req_type.init_req.end_ptr = MK_FP(getCS(), &transient_data);
 
   fujicom_init();
 

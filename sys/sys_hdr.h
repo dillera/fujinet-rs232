@@ -136,7 +136,7 @@ struct L_D_MAP_struct {
   uint32_t reserved;            /* DOS Reserved */
 };
 
-struct REQ_struct {
+typedef struct {
   uint8_t length;               /* Length in bytes of Request */
   uint8_t unit;                 /* Minor Device Unit Number */
   uint8_t command;              /* Device Command Code */
@@ -150,8 +150,7 @@ struct REQ_struct {
     struct INPUT_NO_WAIT_struct ioctl_req;
     struct L_D_MAP_struct l_d_map_req;
   } req_type;
-};
-typedef struct REQ_struct SYSREQ;
+} SYSREQ;
 
 struct BPB_struct {
   uint16_t bps;                 /* Bytes per Sector */

@@ -7,7 +7,7 @@
 #define disable() _asm { cli }
 #define enable() _asm { sti }
 
-SYSREQ __far *fpRequest = (SYSREQ __far *) 0;
+static SYSREQ __far *fpRequest = (SYSREQ __far *) 0;
 extern uint16_t local_stk[STK_SIZE];
 
 extern struct REQ_struct far *r_ptr;
@@ -60,7 +60,7 @@ void far Interrupt(void)
     fpRequest->status = DONE_BIT | ERROR_BIT | UNKNOWN_CMD;
   }
   else {
-    fpRequest->status = currentFunction(NULL);
+    fpRequest->status = currentFunction(fpRequest);
   }
 
   pop_regs();
