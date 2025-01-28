@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
     cmd.aux1 = sector & 0xFF;
     cmd.aux2 = sector >> 8;
 
-    printf("fujicom_command_read(%c) for sector %u",
+    printf("fujicom_command_read(%i) for sector %u\n",
 	   fujicom_command_read(&cmd, buf, sizeof(buf)), sector);
 
     for (i=0;i<sizeof(buf);i++)
