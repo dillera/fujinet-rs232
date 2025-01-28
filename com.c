@@ -67,7 +67,7 @@
  * handler that was in place before the port was opened.
  * It will be restored when the port is closed.
  */
-static PORT *com = NULL;
+static PORT far *com = NULL;
 static void (interrupt far * old_break_handler) ();
 
 
@@ -156,7 +156,7 @@ static void interrupt far interrupt_service_routine()
  * This routine opens an RS-232 port up.  This means it
  * allocates space for a PORT strcture, then calls port_open_static.
  */
-PORT *port_open(int address, int int_number)
+PORT far *port_open(int address, int int_number)
 {
   PORT *port;
 
@@ -175,7 +175,7 @@ PORT *port_open(int address, int int_number)
  * 8259 interrupt controller to begin accepting interrupts
  * on the IRQ line used by this COM port.
  */
-PORT *port_open_static(PORT * port, int address, int int_number)
+PORT far *port_open_static(PORT far *port, int address, int int_number)
 {
   uint8_t temp;
 
@@ -203,7 +203,7 @@ PORT *port_open_static(PORT * port, int address, int int_number)
  * starts changing registers, and are then reenabled after
  * the changes are complete.
  */
-void port_set(PORT * port, long speed, char parity, int data, int stopbits)
+void port_set(PORT far *port, long speed, char parity, int data, int stopbits)
 {
   uint8_t lcr_out;
   uint8_t mcr_out;
@@ -267,7 +267,7 @@ void port_set(PORT * port, long speed, char parity, int data, int stopbits)
 /*
  * Calls port_close_static then frees the passed struct
  */
-void port_close(PORT * port)
+void port_close(PORT far *port)
 {
   port_close_static(port);
   free(port);
@@ -281,7 +281,7 @@ void port_close(PORT * port)
  * handler is restored, and the old break handler
  * is restored.
  */
-void port_close_static(PORT * port)
+void port_close_static(PORT far *port)
 {
   uint8_t temp;
 
@@ -302,7 +302,7 @@ void port_close_static(PORT * port)
  * enabled for this UART.  If they aren't, they are turned
  * on so the ISR will see this new character.
  */
-int port_putc(uint8_t c, PORT * port)
+int port_putc(uint8_t c, PORT far *port)
 {
   if ((port->out.write_index + 1) == port->out.read_index)
     return (-1);
@@ -313,7 +313,7 @@ int port_putc(uint8_t c, PORT * port)
   return (c);
 }
 
-int port_available(PORT * port)
+int port_available(PORT far *port)
 {
   return port->in.write_index - port->in.read_index;
 }
@@ -324,7 +324,7 @@ int port_available(PORT * port)
  * If there is, it is pulled out and returned to the
  * caller.
  */
-int port_getc(PORT * port)
+int port_getc(PORT far *port)
 {
   if (port->in.write_index == port->in.read_index)
     return (-1);
@@ -340,7 +340,7 @@ static struct timeb pgs_t;
  * @param PORT pointer to port structure.
  * @return Character, or -1 if none waiting.
  */
-int port_getc_sync(PORT * port, uint16_t timeout)
+int port_getc_sync(PORT far *port, uint16_t timeout)
 {
   int i;
   uint16_t start;
@@ -362,7 +362,7 @@ int port_getc_sync(PORT * port, uint16_t timeout)
  * @param port Pointer to initialized port.
  * @param t 0 = off, 1 = on
  */
-void port_set_dtr(PORT * port, uint8_t t)
+void port_set_dtr(PORT far *port, uint8_t t)
 {
   if (t)
     outportb(port->uart_base + MCR, inportb(port->uart_base + MCR) | 0x01);
@@ -376,7 +376,7 @@ void port_set_dtr(PORT * port, uint8_t t)
  * @param buf Pointer to buffer
  * @param len number of bytes to send, must be len or less.
  */
-void port_put(PORT * port, uint8_t * buf, uint16_t len)
+void port_put(PORT far *port, uint8_t far *buf, uint16_t len)
 {
   int i = 0;
 

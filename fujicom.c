@@ -15,7 +15,7 @@
 
 #define TIMEOUT		100
 PORT fn_port;
-PORT *port;
+PORT far *port;
 void fujicom_init(void)
 {
   int base, irq;
@@ -42,7 +42,7 @@ void fujicom_init(void)
   port_set(port, baud, 'N', 8, 1);
 }
 
-uint8_t fujicom_cksum(uint8_t *buf, uint16_t len)
+uint8_t fujicom_cksum(uint8_t far *buf, uint16_t len)
 {
   uint16_t chk = 0;
   int i = 0;
@@ -60,7 +60,7 @@ uint8_t fujicom_cksum(uint8_t *buf, uint16_t len)
  * @param c ptr to command frame to send
  * @return 'A'ck, or 'N'ak.
  */
-char _fujicom_send_command(cmdFrame_t *c)
+char _fujicom_send_command(cmdFrame_t far *c)
 {
   int i = -1;
 
@@ -83,13 +83,13 @@ char _fujicom_send_command(cmdFrame_t *c)
   return (uint8_t) i;
 }
 
-char fujicom_command(cmdFrame_t *c)
+char fujicom_command(cmdFrame_t far *c)
 {
   _fujicom_send_command(c);
   return port_getc_sync(port, TIMEOUT);
 }
 
-char fujicom_command_read(cmdFrame_t *c, uint8_t *buf, uint16_t len)
+char fujicom_command_read(cmdFrame_t far *c, uint8_t far *buf, uint16_t len)
 {
   int r;                        /* response */
   int i;
@@ -116,7 +116,7 @@ char fujicom_command_read(cmdFrame_t *c, uint8_t *buf, uint16_t len)
   return (uint8_t) r;
 }
 
-char fujicom_command_write(cmdFrame_t *c, uint8_t *buf, uint16_t len)
+char fujicom_command_write(cmdFrame_t far *c, uint8_t far *buf, uint16_t len)
 {
   uint8_t r;                    /* response */
   int i;

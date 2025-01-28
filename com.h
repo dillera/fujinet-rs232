@@ -30,7 +30,7 @@ typedef struct {
  * when the port is opened with port_open().
  */
 typedef struct {
-  void (interrupt far * old_vector) ();
+  void (interrupt far *old_vector) ();
   int uart_base;
   int irq_mask;
   int interrupt_number;
@@ -55,17 +55,17 @@ typedef struct {
  * The fully qualified function prototypes.  All of these
  * routines actually reside in COM.C
  */
-PORT *port_open(int address, int interrupt_number);
-PORT *port_open_static(PORT * port, int address, int interrupt_number);
-void port_set(PORT * port, long speed, char parity, int data, int stopbits);
-void port_close(PORT * port);
-void port_close_static(PORT * port);
-int port_putc(uint8_t c, PORT * port);
-int port_available(PORT * port);
-int port_getc(PORT * port);
-int port_getc_sync(PORT * port, uint16_t timeout);
-void port_set_dtr(PORT * port, uint8_t t);
-void port_put(PORT * port, uint8_t * buf, uint16_t len);
+PORT far *port_open(int address, int interrupt_number);
+PORT far *port_open_static(PORT far *port, int address, int interrupt_number);
+void port_set(PORT far *port, long speed, char parity, int data, int stopbits);
+void port_close(PORT far *port);
+void port_close_static(PORT far *port);
+int port_putc(uint8_t c, PORT far *port);
+int port_available(PORT far *port);
+int port_getc(PORT far *port);
+int port_getc_sync(PORT far *port, uint16_t timeout);
+void port_set_dtr(PORT far *port, uint8_t t);
+void port_put(PORT far *port, uint8_t far *buf, uint16_t len);
 
 /*
  * These are the standard UART addresses and interrupt

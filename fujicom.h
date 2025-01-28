@@ -24,14 +24,14 @@ void fujicom_init(void);
  * @param buf Buffer to compute checksum against
  * @param len Length of aforementioned buffer
  */
-uint8_t fujicom_cksum(uint8_t *buf, uint16_t len);
+uint8_t fujicom_cksum(uint8_t far *buf, uint16_t len);
 
 /**
  * @brief send FujiNet frame with no payload
  * @param cmdFrame Pointer to command frame
  * @return 'C'omplete, 'E'rror, or 'N'ak
  */
-char fujicom_command(cmdFrame_t *c);
+char fujicom_command(cmdFrame_t far *c);
 
 /**
  * @brief send fujinet frame and read payload
@@ -39,7 +39,7 @@ char fujicom_command(cmdFrame_t *c);
  * @param buf Pointer to buffer to receive
  * @param len Expected buffer length
  */
-char fujicom_command_read(cmdFrame_t *c, uint8_t *buf, uint16_t len);
+char fujicom_command_read(cmdFrame_t far *c, uint8_t far *buf, uint16_t len);
 
 /**
  * @brief send fujinet frame and write payload
@@ -47,7 +47,7 @@ char fujicom_command_read(cmdFrame_t *c, uint8_t *buf, uint16_t len);
  * @param buf pointer to buffer to send.
  * @param len Length of buffer to send.
  */
-char fujicom_command_write(cmdFrame_t *c, uint8_t *buf, uint16_t len);
+char fujicom_command_write(cmdFrame_t far *c, uint8_t far *buf, uint16_t len);
 
 /**
  * @brief end fujicom

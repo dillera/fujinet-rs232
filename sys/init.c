@@ -19,7 +19,6 @@ struct _tm {
   char tm_sec;
 };
 
-struct _tm t;
 union REGS r;
 cmdFrame_t c;
 
@@ -102,16 +101,14 @@ uint16_t Init_cmd(void)
 #else /* !LOOPBACK_TEST */
   {
     char reply = 0;
+    struct _tm t;
 
 
     c.ddev = 0x45;
     c.dcomnd = 0x9A;
 
-    printDTerm("Serial init\r\n$");
     fujicom_init();
-    printDTerm("Serial read\r\n$");
     reply = fujicom_command_read(&c, (uint8_t *) &t, sizeof(t));
-    printDTerm("Serial done\r\n$");
 
     if (reply != 'C') {
       printDTerm("Could not read time from FujiNet.\r\nAborted.\r\n$");
