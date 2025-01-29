@@ -8,11 +8,8 @@
 #define enable() _asm { sti }
 
 static SYSREQ __far *fpRequest = (SYSREQ __far *) 0;
-extern uint16_t local_stk[STK_SIZE];
 
-extern struct REQ_struct far *r_ptr;
-
-typedef uint16_t(*driverFunction_t) (SYSREQ far *r_ptr);
+typedef uint16_t(*driverFunction_t)(SYSREQ far *r_ptr);
 
 static driverFunction_t currentFunction;
 static driverFunction_t dispatchTable[] = {

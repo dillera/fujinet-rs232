@@ -1,3 +1,4 @@
+#include "commands.h"
 #include "fujicom.h"
 #include "print.h"
 #include "dispatch.h"
@@ -19,7 +20,7 @@ struct _tm {
 };
 
 cmdFrame_t cmd;
-union REGS iregs;
+union REGS iregs, oregs;
 
 static char hellomsg[] = "\r\FujiNet in Open Watcom C\r\n$";
 
@@ -30,7 +31,7 @@ extern __segment getCS(void);
 
 uint8_t get_set_time(uint8_t set_flag);
 
-uint16_t Init_cmd(SYSREQ *r_ptr)
+uint16_t Init_cmd(SYSREQ far *r_ptr)
 {
   uint8_t err;
 
@@ -93,7 +94,7 @@ uint8_t get_set_time(uint8_t set_flag)
     iregs.h.dh = cur_time.tm_month;
     iregs.h.dl = cur_time.tm_mday;
 
-    intdos(&iregs, NULL);
+    intdos(&iregs, &oregs);
 
     iregs.h.ah = 0x2D;
     iregs.h.ch = cur_time.tm_hour;
@@ -101,10 +102,11 @@ uint8_t get_set_time(uint8_t set_flag)
     iregs.h.dh = cur_time.tm_sec;
     iregs.h.dl = 0;
 
-    intdos(&iregs, NULL);
+    intdos(&iregs, &oregs);
 
     printDTerm("MS-DOS Time now set from FujiNet\r\n$");
   }
 
   return 0;
 }
+
