@@ -55,17 +55,21 @@ typedef struct {
  * The fully qualified function prototypes.  All of these
  * routines actually reside in COM.C
  */
-PORT far *port_open(int address, int interrupt_number);
-PORT far *port_open_static(PORT far *port, int address, int interrupt_number);
-void port_set(PORT far *port, long speed, char parity, int data, int stopbits);
-void port_close(PORT far *port);
-void port_close_static(PORT far *port);
-int port_putc(uint8_t c, PORT far *port);
-int port_available(PORT far *port);
-int port_getc(PORT far *port);
-int port_getc_sync(PORT far *port, uint16_t timeout);
-void port_set_dtr(PORT far *port, uint8_t t);
-void port_put(PORT far *port, uint8_t far *buf, uint16_t len);
+extern PORT far *port_open(PORT far *port, int address, int interrupt_number);
+extern void port_set(PORT far *port, long speed, char parity, int data, int stopbits);
+extern void port_close(PORT far *port);
+extern int port_putc(PORT far *port, uint8_t c);
+extern int port_available(PORT far *port);
+extern int port_getc(PORT far *port);
+extern int port_getc_sync(PORT far *port, uint16_t timeout);
+extern void port_set_dtr(PORT far *port, uint8_t t);
+extern void port_put(PORT far *port, uint8_t far *buf, uint16_t len);
+extern void port_disable_interrupts(PORT far *port);
+extern void port_enable_interrupts(PORT far *port);
+extern uint16_t port_putbuf(PORT far *port, uint8_t far *buf, uint16_t len);
+extern uint16_t port_getbuf(PORT far *port, uint8_t far *buf, uint16_t len, uint16_t timeout);
+extern void port_putc_nobuf(PORT far *port, uint8_t c);
+extern int port_getc_nobuf(PORT far *port, uint16_t timeout);
 
 /*
  * These are the standard UART addresses and interrupt

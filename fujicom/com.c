@@ -7,12 +7,14 @@
  * interrupt driven interface to one of the RS-232 COM
  * ports on an IBM compatible PC.
  */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <dos.h>
 #include <conio.h>
 #include <sys/timeb.h>
 #include "com.h"
+
 /*
  * This group of defines creates all the definitions used
  * to access registers and bit fields in the 8250 UART.
@@ -68,8 +70,7 @@
  * It will be restored when the port is closed.
  */
 static PORT far *com = NULL;
-static void (interrupt far * old_break_handler) ();
-
+static void (interrupt far *old_break_handler) ();
 
 /*
  * This routine intercepts the CTRL-BREAK vector.  This
@@ -152,30 +153,14 @@ static void interrupt far interrupt_service_routine()
   }
 }
 
-/*
- * This routine opens an RS-232 port up.  This means it
- * allocates space for a PORT strcture, then calls port_open_static.
+/* Initializes the input and output buffers, stores the uart address
+ * and the interrupt number.  It then gets and stored the interrupt
+ * vector presently set up for the UART, then installs its own.  It
+ * also sets up a handler to intercept the CTRL-BREAK handler.
+ * Finally, it tells the 8259 interrupt controller to begin accepting
+ * interrupts on the IRQ line used by this COM port.
  */
-PORT far *port_open(int address, int int_number)
-{
-  PORT *port;
-
-
-  if ((port = malloc(sizeof(PORT))) == NULL)
-    return (NULL);
-  return port_open_static(port, address, int_number);
-}
-
-/* initializes the
- * input and output buffers, stores the uart address and
- * the interrupt number.  It then gets and stored the
- * interrupt vector presently set up for the UART, then
- * installs its own.  It also sets up a handler to
- * intercept the CTRL-BREAK handler.  Finally, it tells the
- * 8259 interrupt controller to begin accepting interrupts
- * on the IRQ line used by this COM port.
- */
-PORT far *port_open_static(PORT far *port, int address, int int_number)
+PORT far *port_open(PORT far *port, int address, int int_number)
 {
   uint8_t temp;
 
@@ -187,7 +172,7 @@ PORT far *port_open_static(PORT far *port, int address, int int_number)
   port->irq_mask = (char) 1 << (int_number % 8);
   port->interrupt_number = int_number;
   port->old_vector = getvect(int_number);
-  setvect(int_number, interrupt_service_routine);
+  //setvect(int_number, interrupt_service_routine);
   old_break_handler = getvect(BREAK_VECTOR);
   setvect(BREAK_VECTOR, break_handler);
   temp = (char) inportb(INT_CONTROLLER + 1);
@@ -265,15 +250,6 @@ void port_set(PORT far *port, long speed, char parity, int data, int stopbits)
 }
 
 /*
- * Calls port_close_static then frees the passed struct
- */
-void port_close(PORT far *port)
-{
-  port_close_static(port);
-  free(port);
-}
-
-/*
  * In order to close the port, I first disable interrupts
  * at the UART, then disable interrupts from the UART's IRQ
  * line at the 8259 interrupt controller.  DTR, RTS, and
@@ -281,7 +257,7 @@ void port_close(PORT far *port)
  * handler is restored, and the old break handler
  * is restored.
  */
-void port_close_static(PORT far *port)
+void port_close(PORT far *port)
 {
   uint8_t temp;
 
@@ -302,7 +278,7 @@ void port_close_static(PORT far *port)
  * enabled for this UART.  If they aren't, they are turned
  * on so the ISR will see this new character.
  */
-int port_putc(uint8_t c, PORT far *port)
+int port_putc(PORT far *port, uint8_t c)
 {
   if ((port->out.write_index + 1) == port->out.read_index)
     return (-1);
@@ -332,8 +308,47 @@ int port_getc(PORT far *port)
     return (port->in.buffer[port->in.read_index++]);
 }
 
-static struct timeb pgs_t;
+#undef FTIME_IS_SAFE
+#ifdef FTIME_IS_SAFE
 
+static struct timeb to_start, to_now;
+#define timeout_start()	ftime(&to_start)
+#define timeout_now()	ftime(&to_now);
+
+static inline uint16_t timeout_delta()
+{
+  uint16_t ms_diff;
+  uint32_t sec_diff;
+
+
+  if (to_now.millitm < to_start.millitm) {
+    to_now.millitm += 1000;
+    to_now.time--;
+  }
+
+  ms_diff = to_now.millitm - to_start.millitm;
+  sec_diff = to_now.time - to_start.time;
+  return sec_diff * 1000 + ms_diff;
+}
+
+#else /* !FTIME_IS_SAFE */
+
+#define timeout_start()	(to_start = get_time_ms());
+#define timeout_now()	(to_now = get_time_ms());
+
+/* Read BIOS tick counter and approximate it as milliseconds */
+static inline uint32_t get_time_ms()
+{
+  return *(volatile uint32_t far *) MK_FP(0x40, 0x6C) * 55;
+}
+
+static uint32_t to_start, to_now;
+static inline uint16_t timeout_delta()
+{
+  return to_now - to_start;
+}
+
+#endif
 
 /**
  * @brief Get next character, wait if not available.
@@ -342,15 +357,10 @@ static struct timeb pgs_t;
  */
 int port_getc_sync(PORT far *port, uint16_t timeout)
 {
-  int i;
-  uint16_t start;
-
-
-  ftime(&pgs_t);
-  start = pgs_t.millitm;
+  timeout_start();
   while (!port_available(port)) {
-    ftime(&pgs_t);
-    if (pgs_t.millitm - start > timeout)
+    timeout_now();
+    if (timeout_delta() > timeout)
       return -1;
   }
 
@@ -382,11 +392,83 @@ void port_put(PORT far *port, uint8_t far *buf, uint16_t len)
 
 
   while (len) {
-    i = port_putc(*buf, port);
+    i = port_putc(port, *buf);
     if (i != -1) {
       len--;
       buf++;
     }
     delay(1);
   }
+}
+
+void port_disable_interrupts(PORT far *port)
+{
+  outportb(port->uart_base + IER, 0);
+  return;
+}
+
+void port_enable_interrupts(PORT far *port)
+{
+  outportb(port->uart_base + IER, IER_RX_DATA);
+  return;
+}
+
+uint16_t port_putbuf(PORT far *port, uint8_t far *buf, uint16_t len)
+{
+  uint16_t rlen;
+
+
+  for (rlen = 0; rlen < len; rlen++, buf++) {
+    // FIXME - make sure transmit buf is empty
+    outportb(port->uart_base + THR, *buf);
+  }
+  return rlen;
+}
+
+uint16_t port_getbuf(PORT far *port, uint8_t far *buf, uint16_t len, uint16_t timeout)
+{
+  int val;
+  uint16_t rlen;
+
+
+  for (rlen = 0; rlen < len; rlen++, buf++) {
+    timeout_start();
+    for (;;) {
+      val = inportb(port->uart_base + LSR);
+      if (val & 1)
+        break;
+      timeout_now();
+      if (timeout_delta() > timeout)
+	return rlen;
+    }
+
+    *buf = inportb(port->uart_base + RBR);
+  }
+
+  return rlen;
+}
+
+void port_putc_nobuf(PORT far *port, uint8_t c)
+{
+  // FIXME - make sure transmit buf is empty
+  outportb(port->uart_base + THR, c);
+  return;
+}
+
+int port_getc_nobuf(PORT far *port, uint16_t timeout)
+{
+  int val;
+
+
+  timeout_start();
+  for (;;) {
+    val = inportb(port->uart_base + LSR);
+    if (val & 1)
+      break;
+    timeout_now();
+    if (timeout_delta() > timeout)
+      return -1;
+  }
+
+  return inportb(port->uart_base + RBR);
 }

@@ -14,8 +14,10 @@
 #define BASE_COM2	0x2f8
 
 #define TIMEOUT		100
+
 PORT fn_port;
 PORT far *port;
+
 void fujicom_init(void)
 {
   int base, irq;
@@ -38,8 +40,11 @@ void fujicom_init(void)
     irq = IRQ_COM2;
     break;
   }
-  port = port_open_static(&fn_port, base, irq);
+  port = port_open(&fn_port, base, irq);
   port_set(port, baud, 'N', 8, 1);
+  port_disable_interrupts(port);
+
+  return;
 }
 
 uint8_t fujicom_cksum(uint8_t far *buf, uint16_t len)
@@ -62,9 +67,6 @@ uint8_t fujicom_cksum(uint8_t far *buf, uint16_t len)
  */
 char _fujicom_send_command(cmdFrame_t far *c)
 {
-  int i = -1;
-
-
   uint8_t *cc = (uint8_t *) c;
 
 
@@ -75,77 +77,85 @@ char _fujicom_send_command(cmdFrame_t far *c)
   port_set_dtr(port, 1);
 
   /* Write command frame */
-  port_put(port, cc, sizeof(cmdFrame_t));
+  port_putbuf(port, cc, sizeof(cmdFrame_t));
 
   /* Desert DTR to indicate end of command frame */
   port_set_dtr(port, 0);
-  i = port_getc_sync(port, TIMEOUT);
-  return (uint8_t) i;
+  return port_getc_nobuf(port, TIMEOUT);
 }
 
 char fujicom_command(cmdFrame_t far *c)
 {
+  int reply;
+
+
+  //port_disable_interrupts(port);
   _fujicom_send_command(c);
-  return port_getc_sync(port, TIMEOUT);
+  reply = port_getc_nobuf(port, TIMEOUT);
+  //port_enable_interrupts(port);
+  return reply;
 }
 
 char fujicom_command_read(cmdFrame_t far *c, uint8_t far *buf, uint16_t len)
 {
-  int r;                        /* response */
-  int i;
+  int reply;
+  uint16_t rlen;
 
 
-  r = _fujicom_send_command(c);
-  if (r == 'N')
-    return r;   /* Return NAK */
+  //port_disable_interrupts(port);
+  reply = _fujicom_send_command(c);
+  if (reply == 'N')
+    goto done;
 
   /* Get COMPLETE/ERROR */
-  r = port_getc_sync(port, TIMEOUT);
-  if (r == 'C') {
-
+  reply = port_getc_nobuf(port, TIMEOUT);
+  if (reply == 'C') {
     /* Complete, get payload */
-    for (i = 0; i < len; i++) {
-      buf[i] = port_getc_sync(port, TIMEOUT);
-    }
+    rlen = port_getbuf(port, buf, len, TIMEOUT);
 
     /* Get Checksum byte, we don't use it. */
-    port_getc_sync(port, TIMEOUT);
+    port_getc_nobuf(port, TIMEOUT);
+    // FIXME - verify checksum and received length
   }
 
-  /* Otherwise, we got an error, return it. */
-  return (uint8_t) r;
+ done:
+  //port_enable_interrupts(port);
+  return reply;
 }
 
 char fujicom_command_write(cmdFrame_t far *c, uint8_t far *buf, uint16_t len)
 {
-  uint8_t r;                    /* response */
-  int i;
-
-
+  int reply;
   uint8_t ck;
 
 
-  r = _fujicom_send_command(c);
-  if (r == 'N')
-    return r;
+  //port_disable_interrupts(port);
+  reply = _fujicom_send_command(c);
+  if (reply == 'N')
+    goto done;
 
   /* Write the payload */
-  port_put(port, buf, len);
+  port_putbuf(port, buf, len);
 
   /* Write the checksum */
   ck = fujicom_cksum(buf, len);
-  port_putc(ck, port);
+  port_putc_nobuf(port, ck);
 
   /* Wait for ACK/NACK */
-  r = port_getc_sync(port, TIMEOUT);
-  if (r == 'N')
-    return r;
+  reply = port_getc_nobuf(port, TIMEOUT);
+  if (reply == 'N')
+    goto done;
 
   /* Wait for COMPLETE/ERROR */
-  return port_getc_sync(port, TIMEOUT);
+  reply = port_getc_nobuf(port, TIMEOUT);
+
+ done:
+  //port_enable_interrupts(port);
+  return reply;
 }
 
 void fujicom_done(void)
 {
-  port_close_static(port);
+  port_close(port);
+  return;
 }
