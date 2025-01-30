@@ -25,4 +25,6 @@ extern void printHex32(uint32_t val, uint16_t width, char leading);
 extern void printDec(uint16_t val, uint16_t width, char leading);
 extern void dumpHex(uint8_t far *buffer, uint16_t count);
 
+extern void consolef(const char *format, ...);
+
 #endif /* _PRINT_H */

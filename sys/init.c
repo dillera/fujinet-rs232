@@ -1,4 +1,5 @@
 #include "commands.h"
+#include "fujinet.h"
 #include "fujicom.h"
 #include "print.h"
 #include "dispatch.h"
@@ -6,8 +7,6 @@
 #include <stddef.h>
 #include <string.h>
 #include <dos.h>
-
-//#pragma data_seg("_CODE")
 
 // FIXME - use SIMPLE with year + century, not APETIME
 struct _tm {
@@ -21,24 +20,21 @@ struct _tm {
 
 cmdFrame_t cmd;
 union REGS iregs, oregs;
+static char hellomsg[] = "\nFujiNet in Open Watcom C\n";
+extern void *end_of_driver;
 
-static char hellomsg[] = "\r\FujiNet in Open Watcom C\r\n$";
-
-extern __segment getCS(void);
-
-#pragma aux getCS = \
-    "mov ax, cs";
+#pragma data_seg("_CODE")
 
 uint8_t get_set_time(uint8_t set_flag);
 
-uint16_t Init_cmd(SYSREQ far *r_ptr)
+uint16_t Init_cmd(SYSREQ far *req)
 {
   uint8_t err;
 
 
-  printDTerm(hellomsg);
+  consolef(hellomsg);
 
-  r_ptr->req_type.init_req.end_ptr = MK_FP(getCS(), &transient_data);
+  req->req_type.init_req.end_ptr = MK_FP(getCS(), &end_of_driver);
 
   fujicom_init();
 
@@ -46,10 +42,41 @@ uint16_t Init_cmd(SYSREQ far *r_ptr)
   err = get_set_time(1);
 
   // If get_set_time returned error, FujiNet is probably not connected
-  if (err)
+  if (err) {
     fujicom_done();
+    return ERROR_BIT;
+  }
 
-  return 0;
+  /* Construct BPB table and pointers */
+  {
+    int idx;
+
+
+    req->req_type.init_req.num_of_units = 1; // FN_MAX_DEV;
+
+    for (idx = 0; idx < FN_MAX_DEV; idx++) {
+      /* 5.25" 360k BPB */
+      fn_bpb_table[idx].bps = 512;
+      fn_bpb_table[idx].spau = 2;
+      fn_bpb_table[idx].rs = 1;
+      fn_bpb_table[idx].num_FATs = 2;
+      fn_bpb_table[idx].root_entries = 0x0070;
+      fn_bpb_table[idx].num_sectors = 0x02d0;
+      fn_bpb_table[idx].media_descriptor = 0xfd;
+      fn_bpb_table[idx].spfat = 2;
+      fn_bpb_table[idx].spt = 9;
+      fn_bpb_table[idx].heads = 2;
+      fn_bpb_table[idx].hidden = 0;
+      fn_bpb_table[idx].num_of_sectors_32 = 0;
+
+      fn_bpb_pointers[idx] = &fn_bpb_table[idx];
+    }
+
+    fn_bpb_pointers[idx] = NULL;
+    req->req_type.build_bpb_req.BPB_table = MK_FP(getCS(), fn_bpb_pointers);
+  }
+
+  return OP_COMPLETE;
 }
 
 /* Returns non-zero on error */
@@ -66,7 +93,7 @@ uint8_t get_set_time(uint8_t set_flag)
   reply = fujicom_command_read(&cmd, (uint8_t *) &cur_time, sizeof(cur_time));
 
   if (reply != 'C') {
-    printDTerm("Could not read time from FujiNet.\r\nAborted.\r\n$");
+    consolef("Could not read time from FujiNet %i.\nAborted.\n", reply);
     return 1;
   }
 
@@ -109,4 +136,3 @@ uint8_t get_set_time(uint8_t set_flag)
 
   return 0;
 }
-

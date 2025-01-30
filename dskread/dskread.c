@@ -30,7 +30,13 @@ int main(int argc, char *argv[])
   printf("fujicom_command_read(%i) for sector %u\n",
 	 fujicom_command_read(&cmd, buf, sizeof(buf)), sector);
 
-  dumpHex(buf, sizeof(buf));
+#if 0
+  for (i = 0; i < sizeof(buf); i++) {
+    printf("%02x ",buf[i]);
+  }
+#else
+  dumpHex(buf, 256);
+#endif
 
   return 0;
 }
@@ -42,7 +48,7 @@ void dumpHex(uint8_t far *buffer, uint16_t count)
 
 
   for (outer = 0; outer < count; outer += 16) {
-    printf("%08x  ", outer);
+    printf("%04x  ", outer);
     for (inner = 0; inner < 16; inner++) {
       if (inner + outer < count) {
         c = buffer[inner + outer];

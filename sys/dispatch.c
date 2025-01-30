@@ -1,6 +1,8 @@
+#include "dispatch.h"
 #include "commands.h"
 #include "sys_hdr.h"
 #include "pushpop.h"
+#include "print.h" // For debugging only
 #include <dos.h>
 #include <stddef.h>
 
@@ -9,7 +11,7 @@
 
 static SYSREQ __far *fpRequest = (SYSREQ __far *) 0;
 
-typedef uint16_t(*driverFunction_t)(SYSREQ far *r_ptr);
+typedef uint16_t(*driverFunction_t)(SYSREQ far *req);
 
 static driverFunction_t currentFunction;
 static driverFunction_t dispatchTable[] = {
@@ -40,10 +42,10 @@ static driverFunction_t dispatchTable[] = {
   Set_l_d_map_cmd
 };
 
-void far Strategy(SYSREQ far *r_ptr)
+void far Strategy(SYSREQ far *req)
 #pragma aux Strategy __parm [__es __bx]
 {
-  fpRequest = r_ptr;
+  fpRequest = req;
   return;
 }
 
@@ -57,7 +59,16 @@ void far Interrupt(void)
     fpRequest->status = DONE_BIT | ERROR_BIT | UNKNOWN_CMD;
   }
   else {
+#ifdef DEBUG
+    printDTerm("Command 0x$");
+    printHex(fpRequest->command, 2, '0');
+#endif
     fpRequest->status = currentFunction(fpRequest);
+#ifdef DEBUG
+    printDTerm(" result: 0x$");
+    printHex(fpRequest->status, 4, '0');
+    printDTerm("\r\n$");
+#endif
   }
 
   pop_regs();
