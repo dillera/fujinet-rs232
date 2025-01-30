@@ -4,6 +4,7 @@
 
 #include "fujicom.h"
 #include "com.h"
+#include "../sys/print.h" // debug
 
 #include <env.h>
 #include <stdlib.h>
@@ -79,6 +80,7 @@ char _fujicom_send_command(cmdFrame_t far *c)
   /* Write command frame */
   port_putbuf(port, cc, sizeof(cmdFrame_t));
 
+  port_wait_for_tx_empty(port);
   /* Desert DTR to indicate end of command frame */
   port_set_dtr(port, 0);
   return port_getc_nobuf(port, TIMEOUT);
@@ -104,19 +106,23 @@ char fujicom_command_read(cmdFrame_t far *c, uint8_t far *buf, uint16_t len)
 
   //port_disable_interrupts(port);
   reply = _fujicom_send_command(c);
-  if (reply == 'N')
+  if (reply != 'A')
     goto done;
 
   /* Get COMPLETE/ERROR */
-  reply = port_getc_nobuf(port, TIMEOUT);
+  reply = port_getc_nobuf(port, 15 * 1000);  
   if (reply == 'C') {
     /* Complete, get payload */
     rlen = port_getbuf(port, buf, len, TIMEOUT);
+    if (rlen != len)
+      consolef("FN Read failed: Exp:%i Got:%i\n", len, rlen);
 
     /* Get Checksum byte, we don't use it. */
     port_getc_nobuf(port, TIMEOUT);
     // FIXME - verify checksum and received length
   }
+  else
+    consolef("FN Read bogus reply: 0x%02x\n", reply);
 
  done:
   //port_enable_interrupts(port);
@@ -131,7 +137,7 @@ char fujicom_command_write(cmdFrame_t far *c, uint8_t far *buf, uint16_t len)
 
   //port_disable_interrupts(port);
   reply = _fujicom_send_command(c);
-  if (reply == 'N')
+  if (reply != 'A')
     goto done;
 
   /* Write the payload */
@@ -143,7 +149,7 @@ char fujicom_command_write(cmdFrame_t far *c, uint8_t far *buf, uint16_t len)
 
   /* Wait for ACK/NACK */
   reply = port_getc_nobuf(port, TIMEOUT);
-  if (reply == 'N')
+  if (reply != 'A')
     goto done;
 
   /* Wait for COMPLETE/ERROR */

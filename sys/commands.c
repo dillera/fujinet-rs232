@@ -2,10 +2,11 @@
 #include "fujinet.h"
 #include "sys_hdr.h"
 #include "fujicom.h"
-#include "com.h" // debug
 #include "print.h"
 #include <string.h>
 #include <dos.h>
+
+#undef DEBUG
 
 #define SECTOR_SIZE	512
 
@@ -31,46 +32,38 @@ uint16_t Build_bpb_cmd(SYSREQ far *req)
   uint8_t far *buf;
 
 
-  if (req->unit > FN_MAX_DEV)
+  if (req->unit > FN_MAX_DEV) {
+    consolef("Invalid BPB unit: %i\n", req->unit);
     return ERROR_BIT;
+  }
 
-#if 1
   cmd.device = DEVICEID_DISK;  /* Drive 1 */
   cmd.comnd = 'R'; /* Read */
   cmd.aux1 = cmd.aux2 = 0;
 
-#if 0
-  buf = sector_buf;
-#else
   // DOS gave us a buffer to use?
   buf = req->req_type.build_bpb_req.buffer_ptr;
-#endif
   reply = fujicom_command_read(&cmd, buf, sizeof(sector_buf));
-  if (reply != 'C')
+  if (reply != 'C') {
+    consolef("FujiNet read fail: %i\n", reply);
     return ERROR_BIT;
+  }
 
   //dumpHex(buf[128*2], 128);
-#endif
 
-#if 1
 #if 0
   consolef("\n");
   dumpHex((uint8_t far *) fn_bpb_pointers[req->unit], sizeof(struct BPB_struct));
   dumpHex(&buf[0x0b], sizeof(struct BPB_struct));
 #endif
+
   _fmemcpy(fn_bpb_pointers[req->unit], &buf[0x0b], sizeof(struct BPB_struct));
-#if 0
+
+#ifdef DEBUG
   dumpHex((uint8_t far *) fn_bpb_pointers[req->unit], sizeof(struct BPB_struct));
-#endif
-#endif
+#endif // DEBUG
   
-#if 0
-  consolef("MT: %02x  BPB: %08lx  init: %08lx\n",
-	   req->req_type.build_bpb_req.media_byte,
-	   (uint32_t) req->req_type.build_bpb_req.BPB_table,
-	   (uint32_t) fn_bpb_pointers);
-#endif
-  req->req_type.build_bpb_req.BPB_table = MK_FP(getCS(), fn_bpb_pointers[req->unit]);
+  req->req_type.build_bpb_req.BPB_table = MK_FP(getCS(), fn_bpb_pointers[0]);
 
   return OP_COMPLETE;
 }
@@ -102,6 +95,8 @@ uint16_t Input_cmd(SYSREQ far *req)
     if (reply != 'C')
       break;
   }
+  if (!idx)
+    return ERROR_BIT;
   
   req->req_type.i_o_req.count = idx;
   return OP_COMPLETE;

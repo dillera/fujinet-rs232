@@ -70,6 +70,7 @@ extern uint16_t port_putbuf(PORT far *port, uint8_t far *buf, uint16_t len);
 extern uint16_t port_getbuf(PORT far *port, uint8_t far *buf, uint16_t len, uint16_t timeout);
 extern void port_putc_nobuf(PORT far *port, uint8_t c);
 extern int port_getc_nobuf(PORT far *port, uint16_t timeout);
+extern void port_wait_for_tx_empty(PORT far *part);
 
 /*
  * These are the standard UART addresses and interrupt

@@ -360,7 +360,7 @@ int port_getc_sync(PORT far *port, uint16_t timeout)
   timeout_start();
   while (!port_available(port)) {
     timeout_now();
-    if (timeout_delta() > timeout)
+    if (timeout && timeout_delta() > timeout)
       return -1;
   }
 
@@ -416,10 +416,16 @@ void port_enable_interrupts(PORT far *port)
 uint16_t port_putbuf(PORT far *port, uint8_t far *buf, uint16_t len)
 {
   uint16_t rlen;
+  int val;
 
 
   for (rlen = 0; rlen < len; rlen++, buf++) {
-    // FIXME - make sure transmit buf is empty
+    for (;;) {
+      val = inportb(port->uart_base + LSR);
+      if (val & 0x20)
+	break;
+    }
+
     outportb(port->uart_base + THR, *buf);
   }
   return rlen;
@@ -438,7 +444,7 @@ uint16_t port_getbuf(PORT far *port, uint8_t far *buf, uint16_t len, uint16_t ti
       if (val & 1)
         break;
       timeout_now();
-      if (timeout_delta() > timeout)
+      if (timeout && timeout_delta() > timeout)
 	return rlen;
     }
 
@@ -450,7 +456,15 @@ uint16_t port_getbuf(PORT far *port, uint8_t far *buf, uint16_t len, uint16_t ti
 
 void port_putc_nobuf(PORT far *port, uint8_t c)
 {
-  // FIXME - make sure transmit buf is empty
+  int val;
+
+
+  for (;;) {
+    val = inportb(port->uart_base + LSR);
+    if (val & 0x20)
+      break;
+  }
+    
   outportb(port->uart_base + THR, c);
   return;
 }
@@ -466,9 +480,23 @@ int port_getc_nobuf(PORT far *port, uint16_t timeout)
     if (val & 1)
       break;
     timeout_now();
-    if (timeout_delta() > timeout)
+    if (timeout && timeout_delta() > timeout)
       return -1;
   }
 
   return inportb(port->uart_base + RBR);
+}
+
+void port_wait_for_tx_empty(PORT far *port)
+{
+  int val;
+
+
+  for (;;) {
+    val = inportb(port->uart_base + LSR);
+    if (val & 0x40)
+      break;
+  }
+    
+  return;
 }

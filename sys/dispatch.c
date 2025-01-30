@@ -6,6 +6,8 @@
 #include <dos.h>
 #include <stddef.h>
 
+#undef DEBUG
+
 #define disable() _asm { cli }
 #define enable() _asm { sti }
 

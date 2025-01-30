@@ -52,11 +52,12 @@ void printDec(uint16_t val, uint16_t width, char leading)
   uint16_t digits, tval, tens;
 
 
-  for (tval = val, digits = 0, tens = 10; tval; tval /= 10, digits++, tens *= 10)
+  for (tval = val, digits = 0; tval; tval /= 10, digits++)
     ;
   if (!digits)
     digits = 1;
-  tens /= 10;
+  for (tval = digits - 1, tens = 1; tval; tval--, tens *= 10)
+    ;
 
   for (; digits < width; width--)
     printChar(leading);
@@ -76,11 +77,12 @@ void printDec32(uint32_t val, uint16_t width, char leading)
   uint16_t digits, tens;
 
 
-  for (tval = val, digits = 0, tens = 10; tval; tval /= 10, digits++, tens *= 10)
+  for (tval = val, digits = 0; tval; tval /= 10, digits++)
     ;
   if (!digits)
     digits = 1;
-  tens /= 10;
+  for (tval = digits - 1, tens = 1; tval; tval--, tens *= 10)
+    ;
 
   for (; digits < width; width--)
     printChar(leading);
