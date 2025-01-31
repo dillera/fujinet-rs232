@@ -19,8 +19,7 @@ struct _tm {
 };
 
 cmdFrame_t cmd;
-union REGS iregs, oregs;
-static char hellomsg[] = "\nFujiNet in Open Watcom C\n";
+union REGS regs;
 extern void *end_of_driver;
 
 #pragma data_seg("_CODE")
@@ -32,7 +31,11 @@ uint16_t Init_cmd(SYSREQ far *req)
   uint8_t err;
 
 
-  consolef(hellomsg);
+  regs.h.ah = 0x30;
+  intdos(&regs, &regs);
+  consolef("\nFujiNet driver loaded on MS-DOS %i.%i\n", regs.h.al, regs.h.ah);
+  
+  // FIXME - determine if UART is 8250, 16450, 16550, or 16550A
 
   req->req_type.init_req.end_ptr = MK_FP(getCS(), &end_of_driver);
 
@@ -116,20 +119,20 @@ uint8_t get_set_time(uint8_t set_flag)
   printDTerm("\r\n$");
 
   if (set_flag) {
-    iregs.h.ah = 0x2B;
-    iregs.x.cx = year_wcen;
-    iregs.h.dh = cur_time.tm_month;
-    iregs.h.dl = cur_time.tm_mday;
+    regs.h.ah = 0x2B;
+    regs.x.cx = year_wcen;
+    regs.h.dh = cur_time.tm_month;
+    regs.h.dl = cur_time.tm_mday;
 
-    intdos(&iregs, &oregs);
+    intdos(&regs, &regs);
 
-    iregs.h.ah = 0x2D;
-    iregs.h.ch = cur_time.tm_hour;
-    iregs.h.cl = cur_time.tm_min;
-    iregs.h.dh = cur_time.tm_sec;
-    iregs.h.dl = 0;
+    regs.h.ah = 0x2D;
+    regs.h.ch = cur_time.tm_hour;
+    regs.h.cl = cur_time.tm_min;
+    regs.h.dh = cur_time.tm_sec;
+    regs.h.dl = 0;
 
-    intdos(&iregs, &oregs);
+    intdos(&regs, &regs);
 
     printDTerm("MS-DOS Time now set from FujiNet\r\n$");
   }
