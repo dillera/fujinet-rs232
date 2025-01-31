@@ -10,7 +10,9 @@
 #include <stdlib.h>
 
 #define TIMEOUT         100
+#ifndef SERIAL_BPS
 #define SERIAL_BPS      9600
+#endif /* SERIAL_BPS */
 
 PORT fn_port;
 PORT far *port;

@@ -2,7 +2,7 @@ TARGET  = fujinet.sys
 AS      = wasm
 ASFLAGS = -0 -mt -bt=DOS
 CC      = wcc
-CFLAGS  = -0 -bt=dos -ms -I../fujicom -s -osh -zu
+CFLAGS  = -0 -bt=dos -ms -I../fujicom -s -osh -zu $(CPPFLAGS)
 LD	= wlink
 LDFLAGS = &
 	SYSTEM dos &

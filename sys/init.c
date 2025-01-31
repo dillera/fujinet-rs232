@@ -9,6 +9,10 @@
 #include <string.h>
 #include <dos.h>
 
+#ifndef VERSION
+#define VERSION "0.8"
+#endif
+
 // FIXME - use SIMPLE with year + century, not APETIME
 struct _tm {
   char tm_mday;
@@ -35,7 +39,7 @@ uint16_t Init_cmd(SYSREQ far *req)
 
   regs.h.ah = 0x30;
   intdos(&regs, &regs);
-  consolef("\nFujiNet driver loaded on MS-DOS %i.%i\n", regs.h.al, regs.h.ah);
+  consolef("\nFujiNet driver " VERSION " loaded on MS-DOS %i.%i\n", regs.h.al, regs.h.ah);
 
   req->req_type.init_req.end_ptr = MK_FP(getCS(), &end_of_driver);
 

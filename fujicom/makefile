@@ -3,7 +3,7 @@ TARGET  = fujicoms.lib
 AS      = wasm
 ASFLAGS = -0 -mt -bt=DOS
 CC      = wcc
-CFLAGS  = -0 -bt=dos -ms -s -osh -zu
+CFLAGS  = -0 -bt=dos -ms -s -osh -zu $(CPPFLAGS)
 LIB     = wlib
 
 CFILES  = fujicom.c com.c
