@@ -1,6 +1,7 @@
 #include "commands.h"
 #include "fujinet.h"
 #include "fujicom.h"
+#include "com.h"
 #include "print.h"
 #include "dispatch.h"
 #include <stdint.h>
@@ -25,6 +26,7 @@ extern void *end_of_driver;
 #pragma data_seg("_CODE")
 
 uint8_t get_set_time(uint8_t set_flag);
+void check_uart();
 
 uint16_t Init_cmd(SYSREQ far *req)
 {
@@ -34,12 +36,11 @@ uint16_t Init_cmd(SYSREQ far *req)
   regs.h.ah = 0x30;
   intdos(&regs, &regs);
   consolef("\nFujiNet driver loaded on MS-DOS %i.%i\n", regs.h.al, regs.h.ah);
-  
-  // FIXME - determine if UART is 8250, 16450, 16550, or 16550A
 
   req->req_type.init_req.end_ptr = MK_FP(getCS(), &end_of_driver);
 
   fujicom_init();
+  check_uart();
 
   // FIXME - check if /NOTIME was passed on command line
   err = get_set_time(1);
@@ -138,4 +139,36 @@ uint8_t get_set_time(uint8_t set_flag)
   }
 
   return 0;
+}
+
+void check_uart()
+{
+  extern PORT far *port; // FIXME - this is in fujicom.c
+  int uart;
+
+
+  uart = port_identify_uart(port);
+  switch (uart) {
+  case UART_16550A:
+    consolef("Serial port is 16550A w/FIFO\n");
+    break;
+
+  case UART_16550:
+    consolef("Serial port is 16550\n");
+    break;
+
+  case UART_16450:
+    consolef("Serial port is 16450\n");
+    break;
+
+  case UART_8250:
+    consolef("Serial port is 8250\n");
+    break;
+
+  default:
+    consolef("Unknown serial port\n");
+    break;
+  }
+
+  return;
 }

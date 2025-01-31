@@ -71,6 +71,7 @@ extern uint16_t port_getbuf(PORT far *port, uint8_t far *buf, uint16_t len, uint
 extern void port_putc_nobuf(PORT far *port, uint8_t c);
 extern int port_getc_nobuf(PORT far *port, uint16_t timeout);
 extern void port_wait_for_tx_empty(PORT far *part);
+extern int port_identify_uart(PORT far *port);
 
 /*
  * These are the standard UART addresses and interrupt
@@ -80,5 +81,12 @@ extern void port_wait_for_tx_empty(PORT far *part);
 #define COM1_INTERRUPT    12
 #define COM2_UART         0x2f8
 #define COM2_INTERRUPT    11
+
+enum {
+  UART_8250 = 0,
+  UART_16450,
+  UART_16550,
+  UART_16550A,
+};
 
 #endif /* _COM_H */

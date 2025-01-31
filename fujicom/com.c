@@ -55,6 +55,8 @@
 #define MSR              6      /* Modem Status register   */
 #define DLL              0      /* Divisor latch LSB       */
 #define DLM              1      /* Divisor latch MSB       */
+#define SCR              7      /* Scratch register        */
+#define FCR              2      /* FIFO Control Register   */
 /*
  * Various constants used only in this program.
  */
@@ -308,33 +310,8 @@ int port_getc(PORT far *port)
     return (port->in.buffer[port->in.read_index++]);
 }
 
-#undef FTIME_IS_SAFE
-#ifdef FTIME_IS_SAFE
-
-static struct timeb to_start, to_now;
-#define timeout_start()	ftime(&to_start)
-#define timeout_now()	ftime(&to_now);
-
-static inline uint16_t timeout_delta()
-{
-  uint16_t ms_diff;
-  uint32_t sec_diff;
-
-
-  if (to_now.millitm < to_start.millitm) {
-    to_now.millitm += 1000;
-    to_now.time--;
-  }
-
-  ms_diff = to_now.millitm - to_start.millitm;
-  sec_diff = to_now.time - to_start.time;
-  return sec_diff * 1000 + ms_diff;
-}
-
-#else /* !FTIME_IS_SAFE */
-
-#define timeout_start()	(to_start = get_time_ms());
-#define timeout_now()	(to_now = get_time_ms());
+#define timeout_start() (to_start = get_time_ms());
+#define timeout_now()   (to_now = get_time_ms());
 
 /* Read BIOS tick counter and approximate it as milliseconds */
 static inline uint32_t get_time_ms()
@@ -347,8 +324,6 @@ static inline uint16_t timeout_delta()
 {
   return to_now - to_start;
 }
-
-#endif
 
 /**
  * @brief Get next character, wait if not available.
@@ -423,7 +398,7 @@ uint16_t port_putbuf(PORT far *port, uint8_t far *buf, uint16_t len)
     for (;;) {
       val = inportb(port->uart_base + LSR);
       if (val & 0x20)
-	break;
+        break;
     }
 
     outportb(port->uart_base + THR, *buf);
@@ -445,7 +420,7 @@ uint16_t port_getbuf(PORT far *port, uint8_t far *buf, uint16_t len, uint16_t ti
         break;
       timeout_now();
       if (timeout && timeout_delta() > timeout)
-	return rlen;
+        return rlen;
     }
 
     *buf = inportb(port->uart_base + RBR);
@@ -464,7 +439,7 @@ void port_putc_nobuf(PORT far *port, uint8_t c)
     if (val & 0x20)
       break;
   }
-    
+
   outportb(port->uart_base + THR, c);
   return;
 }
@@ -497,6 +472,37 @@ void port_wait_for_tx_empty(PORT far *port)
     if (val & 0x40)
       break;
   }
-    
+
   return;
+}
+
+int port_identify_uart(PORT far *port)
+{
+  int val;
+
+
+  /* Check if UART has scratch register, 16450 and up do */
+  outportb(port->uart_base + 7, 0x55);
+  val = inportb(port->uart_base + SCR);
+  if (val != 0x55)
+    return UART_8250;
+  outportb(port->uart_base + 7, 0xAA);
+  val = inportb(port->uart_base + SCR);
+  if (val != 0xAA)
+    return UART_8250;
+
+  /* Check if FIFO can be enabled, doesn't work on 8250/16450 */
+  outportb(port->uart_base + FCR, 0x01);
+  val = inportb(port->uart_base + IIR);
+  val >>= 6; // Isolate FIFO status bits
+  if (!val)
+    return UART_16450;
+  
+  if (val != 3) {
+    /* FIFOs don't work on UART_16550, turn it off */
+    outportb(port->uart_base + FCR, 0x00);
+    return UART_16550;
+  }
+
+  return UART_16550A;
 }

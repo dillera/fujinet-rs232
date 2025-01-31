@@ -9,12 +9,8 @@
 #include <env.h>
 #include <stdlib.h>
 
-#define IRQ_COM1	12
-#define IRQ_COM2	11
-#define BASE_COM1	0x3f8
-#define BASE_COM2	0x2f8
-
-#define TIMEOUT		100
+#define TIMEOUT         100
+#define SERIAL_BPS      9600
 
 PORT fn_port;
 PORT far *port;
@@ -22,7 +18,7 @@ PORT far *port;
 void fujicom_init(void)
 {
   int base, irq;
-  int baud = 9600;
+  long baud = SERIAL_BPS;
   int p = 1;
 
 
@@ -33,12 +29,12 @@ void fujicom_init(void)
   switch (p) {
   default:
   case 1:
-    base = BASE_COM1;
-    irq = IRQ_COM1;
+    base = COM1_UART;
+    irq = COM1_INTERRUPT;
     break;
   case 2:
-    base = BASE_COM2;
-    irq = IRQ_COM2;
+    base = COM2_UART;
+    irq = COM2_INTERRUPT;
     break;
   }
   port = port_open(&fn_port, base, irq);
