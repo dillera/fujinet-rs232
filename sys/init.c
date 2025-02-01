@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
+#include <stdlib.h>
 #include <dos.h>
 
 #ifndef VERSION
@@ -25,12 +26,14 @@ struct _tm {
 
 cmdFrame_t cmd;
 union REGS regs;
-extern void *end_of_driver;
+extern void *config_env, *driver_end;
 
 #pragma data_seg("_CODE")
 
 uint8_t get_set_time(uint8_t set_flag);
 void check_uart();
+void parse_config(const uint8_t far *config);
+void dump_environ();
 
 uint16_t Init_cmd(SYSREQ far *req)
 {
@@ -40,8 +43,15 @@ uint16_t Init_cmd(SYSREQ far *req)
   regs.h.ah = 0x30;
   intdos(&regs, &regs);
   consolef("\nFujiNet driver " VERSION " loaded on MS-DOS %i.%i\n", regs.h.al, regs.h.ah);
+  consolef("ENVIRON: 0x%08lx 0x%08lx  0x%04x - 0x%04x = %i  %04x\n",
+	   (uint32_t) environ, (uint32_t) environ[0],
+	   &driver_end, &config_env, (uint16_t) &driver_end - (uint16_t) &config_env,
+	   sizeof(environ[0]));
+  parse_config(req->req_type.init_req.BPB_ptr);
+  environ = (char **) &config_env;
+  dump_environ();
 
-  req->req_type.init_req.end_ptr = MK_FP(getCS(), &end_of_driver);
+  req->req_type.init_req.end_ptr = MK_FP(getCS(), &driver_end);
 
   fujicom_init();
   check_uart();
@@ -176,3 +186,106 @@ void check_uart()
 
   return;
 }
+
+/* Parse CONFIG.SYS command line */
+void parse_config(const uint8_t far *config_sys)
+{
+  int idx, count;
+  const uint8_t far *cfg, far *bcfg;
+  char **cfg_env = (char **) &config_env;
+  char *buf, *buf_max;
+  uint8_t eq_flag;
+
+
+  printDTerm("CONFIG.SYS: $");
+  for (cfg = config_sys; cfg && *cfg && *cfg != '\r' && *cfg != '\n'; cfg++)
+    printChar(*cfg);
+  printDTerm("\r\n$");
+
+  *cfg_env = NULL;
+
+  // Driver filename is everything before the first space
+  for (cfg = config_sys; cfg && *cfg && *cfg != ' ' && *cfg != '\r' && *cfg != '\n'; cfg++)
+    ;
+
+  if (*cfg != ' ')
+    return;
+
+  // Skip any trailing spaces
+  while (*cfg == ' ')
+    cfg++;
+  bcfg = cfg;
+
+  // Count how many options we have
+  count = 0;
+  while (1) {
+    // Find end of this config option
+    for (; cfg && *cfg && *cfg != ' ' && *cfg != '\r' && *cfg != '\n'; cfg++)
+      ;
+    count++;
+    if (*cfg != ' ')
+      break;
+
+    // Skip any trailing spaces
+    while (*cfg == ' ')
+      cfg++;
+  }
+
+  consolef("Options count: %i\n", count);
+  
+  // Start strings after pointer table + NULL
+  buf = ((char *) cfg_env) + sizeof(char *) * (count + 1);
+  buf_max = buf + ((uint16_t) &driver_end - (uint16_t) &config_env);
+
+  // Convert options to null terminated environment variables
+  for (idx = 0, cfg = bcfg; idx < count && buf < buf_max; idx++) {
+    cfg_env[idx] = buf;
+
+    // Find end of this config option
+    for (eq_flag = 0; cfg && *cfg && *cfg != ' ' && *cfg != '\r' && *cfg != '\n'; cfg++) {
+      if (*cfg == '=')
+	eq_flag = 1;
+      *buf = *cfg;
+      buf++;
+      if (buf == buf_max)
+	break;
+    }
+    if (buf == buf_max)
+      break;
+    
+    if (!eq_flag) {
+      *buf = '=';
+      buf++;
+      if (buf == buf_max)
+	break;
+    }
+    *buf = 0;
+    buf++;
+
+    // Skip any trailing spaces
+    while (*cfg == ' ')
+      cfg++;
+  }
+
+  cfg_env[idx] = 0;
+  dumpHex((uint8_t *) &config_env, buf - (char *) &config_env);
+  
+  return;
+}
+
+void dump_environ()
+{
+  int idx;
+  const char *p;
+
+
+  for (idx = 0; environ[idx]; idx++) {
+    consolef("0x%08lx ", (uint32_t) environ[idx]);
+    for (p = environ[idx]; p && *p; p++)
+      printChar(*p);
+    consolef("\n");
+  }
+  consolef("Total: %i\n", idx);
+  return;
+}
+    

@@ -20,15 +20,17 @@ PORT far *port;
 void fujicom_init(void)
 {
   int base, irq;
-  long baud = SERIAL_BPS;
-  int p = 1;
+  long bps = SERIAL_BPS;
+  int comp = 1;
 
 
   if (getenv("FUJI_PORT"))
-    p = atoi(getenv("FUJI_PORT"));
-  if (getenv("FUJI_BAUD"))
-    baud = atoi(getenv("FUJI_BAUD"));
-  switch (p) {
+    comp = atoi(getenv("FUJI_PORT"));
+  if (getenv("FUJI_BPS"))
+    bps = atol(getenv("FUJI_BPS"));
+  consolef("Port: %i  BPS: %li\n", comp, (int32_t) bps);
+
+  switch (comp) {
   default:
   case 1:
     base = COM1_UART;
@@ -39,8 +41,9 @@ void fujicom_init(void)
     irq = COM2_INTERRUPT;
     break;
   }
+
   port = port_open(&fn_port, base, irq);
-  port_set(port, baud, 'N', 8, 1);
+  port_set(port, bps, 'N', 8, 1);
   port_disable_interrupts(port);
 
   return;

@@ -73,8 +73,8 @@ void printDec(uint16_t val, uint16_t width, char leading)
 
 void printDec32(uint32_t val, uint16_t width, char leading)
 {
-  uint32_t tval;
-  uint16_t digits, tens;
+  uint32_t tval, tens;
+  uint16_t digits;
 
 
   for (tval = val, digits = 0; tval; tval /= 10, digits++)
@@ -193,4 +193,3 @@ void consolef(const char *format, ...)
 
   return;
 }
-
