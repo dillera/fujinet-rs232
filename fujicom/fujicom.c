@@ -103,12 +103,21 @@ char fujicom_command_read(cmdFrame_t far *c, uint8_t far *buf, uint16_t len)
 {
   int reply;
   uint16_t rlen;
-
+  int retries=25;
 
   //port_disable_interrupts(port);
-  reply = _fujicom_send_command(c);
-  if (reply != 'A')
-    goto done;
+
+  while (retries--)
+  {
+  	reply = _fujicom_send_command(c);
+	if (reply == 'A')
+		break;
+	else if (reply == 'N')
+		goto done;
+  }
+
+  if (!retries)
+	  goto done;
 
   /* Get COMPLETE/ERROR */
   reply = port_getc_nobuf(port, 15 * 1000);  
@@ -134,12 +143,21 @@ char fujicom_command_write(cmdFrame_t far *c, uint8_t far *buf, uint16_t len)
 {
   int reply;
   uint8_t ck;
-
+  int retries=25;
 
   //port_disable_interrupts(port);
   reply = _fujicom_send_command(c);
-  if (reply != 'A')
-    goto done;
+
+  while(retries--)
+  {
+  	if (reply == 'A')
+    		break;
+	else if (reply == 'N')
+		goto done;
+  }
+
+  if (!retries)
+	  goto done;
 
   /* Write the payload */
   port_putbuf(port, buf, len);
