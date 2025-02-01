@@ -104,6 +104,7 @@ char fujicom_command_read(cmdFrame_t far *c, uint8_t far *buf, uint16_t len)
   int reply;
   uint16_t rlen;
   int retries=25;
+  uint8_t ck1,ck2=0;
 
   //port_disable_interrupts(port);
 
@@ -120,16 +121,19 @@ char fujicom_command_read(cmdFrame_t far *c, uint8_t far *buf, uint16_t len)
 	  goto done;
 
   /* Get COMPLETE/ERROR */
-  reply = port_getc_nobuf(port, 15 * 1000);  
+  reply = port_getc_nobuf(port, 15 * 1000);
   if (reply == 'C') {
     /* Complete, get payload */
     rlen = port_getbuf(port, buf, len, TIMEOUT);
     if (rlen != len)
       consolef("FN Read failed: Exp:%i Got:%i\n", len, rlen);
 
-    /* Get Checksum byte, we don't use it. */
-    port_getc_nobuf(port, TIMEOUT);
-    // FIXME - verify checksum and received length
+    /* Get Checksum byte, verify it. */
+    ck1 = port_getc_nobuf(port, TIMEOUT);
+    ck2 = fujicom_cksum(buf,len);
+
+    if (ck1 != ck2)
+    	return 'E';
   }
   else
     consolef("FN Read bogus reply: 0x%02x\n", reply);
