@@ -28,6 +28,8 @@ cmdFrame_t cmd;
 union REGS regs;
 extern void *config_env, *driver_end;
 
+extern void setf5(void);
+
 #pragma data_seg("_CODE")
 
 uint8_t get_set_time(uint8_t set_flag);
@@ -95,6 +97,9 @@ uint16_t Init_cmd(SYSREQ far *req)
     req->req_type.build_bpb_req.BPB_table = MK_FP(getCS(), fn_bpb_pointers);
   }
 
+  setf5();
+  printDTerm("INT F5 Functions installed.\r\n$");
+  
   return OP_COMPLETE;
 }
 
