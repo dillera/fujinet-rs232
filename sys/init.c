@@ -32,12 +32,13 @@ extern void *config_env, *driver_end;
 
 uint8_t get_set_time(uint8_t set_flag);
 void check_uart();
-void parse_config(const uint8_t far *config);
+uint16_t parse_config(const uint8_t far *config_sys);
 void dump_environ();
 
 uint16_t Init_cmd(SYSREQ far *req)
 {
   uint8_t err;
+  uint16_t unused;
 
 
   regs.h.ah = 0x30;
@@ -47,11 +48,11 @@ uint16_t Init_cmd(SYSREQ far *req)
 	   (uint32_t) environ, (uint32_t) environ[0],
 	   &driver_end, &config_env, (uint16_t) &driver_end - (uint16_t) &config_env,
 	   sizeof(environ[0]));
-  parse_config(req->req_type.init_req.BPB_ptr);
+  unused = parse_config(req->req_type.init_req.BPB_ptr);
   environ = (char **) &config_env;
   dump_environ();
 
-  req->req_type.init_req.end_ptr = MK_FP(getCS(), &driver_end);
+  req->req_type.init_req.end_ptr = MK_FP(getCS(), (uint8_t *) &driver_end - unused);
 
   fujicom_init();
   check_uart();
@@ -187,8 +188,8 @@ void check_uart()
   return;
 }
 
-/* Parse CONFIG.SYS command line */
-void parse_config(const uint8_t far *config_sys)
+/* Parse CONFIG.SYS command line, returns number of bytes remaining in config_env */
+uint16_t parse_config(const uint8_t far *config_sys)
 {
   int idx, count;
   const uint8_t far *cfg, far *bcfg;
@@ -203,13 +204,15 @@ void parse_config(const uint8_t far *config_sys)
   printDTerm("\r\n$");
 
   *cfg_env = NULL;
+  buf = (char *) &cfg_env[1];
+  buf_max = (char *) cfg_env + ((uint16_t) &driver_end - (uint16_t) &config_env);
 
   // Driver filename is everything before the first space
   for (cfg = config_sys; cfg && *cfg && *cfg != ' ' && *cfg != '\r' && *cfg != '\n'; cfg++)
     ;
 
   if (*cfg != ' ')
-    return;
+    goto done;
 
   // Skip any trailing spaces
   while (*cfg == ' ')
@@ -235,7 +238,6 @@ void parse_config(const uint8_t far *config_sys)
   
   // Start strings after pointer table + NULL
   buf = ((char *) cfg_env) + sizeof(char *) * (count + 1);
-  buf_max = buf + ((uint16_t) &driver_end - (uint16_t) &config_env);
 
   // Convert options to null terminated environment variables
   for (idx = 0, cfg = bcfg; idx < count && buf < buf_max; idx++) {
@@ -269,8 +271,9 @@ void parse_config(const uint8_t far *config_sys)
 
   cfg_env[idx] = 0;
   dumpHex((uint8_t *) &config_env, buf - (char *) &config_env);
-  
-  return;
+
+ done:
+  return buf - (char *) &config_env;
 }
 
 void dump_environ()
@@ -288,4 +291,3 @@ void dump_environ()
   consolef("Total: %i\n", idx);
   return;
 }
-    
