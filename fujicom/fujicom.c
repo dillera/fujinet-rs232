@@ -103,15 +103,25 @@ char fujicom_command_read(cmdFrame_t far *cmd, uint8_t far *buf, uint16_t len)
 {
   int reply;
   uint16_t rlen;
-
+  int retries=25;
+  uint8_t ck1,ck2=0;
 
   //port_disable_interrupts(port);
-  reply = _fujicom_send_command(cmd);
-  if (reply != 'A')
-    goto done;
+
+  while (retries--)
+  {
+  	reply = _fujicom_send_command(cmd);
+	if (reply == 'A')
+		break;
+	else if (reply == 'N')
+		goto done;
+  }
+
+  if (!retries)
+	  goto done;
 
   /* Get COMPLETE/ERROR */
-  reply = port_getc_nobuf(port, 15 * 1000);  
+  reply = port_getc_nobuf(port, 15 * 1000);
   if (reply == 'C') {
     /* Complete, get payload */
     rlen = port_getbuf(port, buf, len, TIMEOUT);
@@ -120,9 +130,12 @@ char fujicom_command_read(cmdFrame_t far *cmd, uint8_t far *buf, uint16_t len)
 	       len, rlen,
 	       cmd->device, cmd->comnd, cmd->aux1, cmd->aux2, cmd->cksum);
 
-    /* Get Checksum byte, we don't use it. */
-    port_getc_nobuf(port, TIMEOUT);
-    // FIXME - verify checksum and received length
+    /* Get Checksum byte, verify it. */
+    ck1 = port_getc_nobuf(port, TIMEOUT);
+    ck2 = fujicom_cksum(buf,len);
+
+    if (ck1 != ck2)
+    	return 'E';
   }
   else
     consolef("FN Read bogus reply: 0x%02x\n", reply);
@@ -136,12 +149,21 @@ char fujicom_command_write(cmdFrame_t far *cmd, uint8_t far *buf, uint16_t len)
 {
   int reply;
   uint8_t ck;
-
+  int retries=25;
 
   //port_disable_interrupts(port);
   reply = _fujicom_send_command(cmd);
-  if (reply != 'A')
-    goto done;
+
+  while(retries--)
+  {
+  	if (reply == 'A')
+    		break;
+	else if (reply == 'N')
+		goto done;
+  }
+
+  if (!retries)
+	  goto done;
 
   /* Write the payload */
   port_putbuf(port, buf, len);
