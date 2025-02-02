@@ -412,6 +412,8 @@ uint16_t port_getbuf(PORT far *port, uint8_t far *buf, uint16_t len, uint16_t ti
   uint16_t rlen;
 
 
+  _disable();
+  
   for (rlen = 0; rlen < len; rlen++, buf++) {
     timeout_start();
     for (;;) {
@@ -420,12 +422,14 @@ uint16_t port_getbuf(PORT far *port, uint8_t far *buf, uint16_t len, uint16_t ti
         break;
       timeout_now();
       if (timeout && timeout_delta() > timeout)
-        return rlen;
+	goto done;
     }
 
     *buf = inportb(port->uart_base + RBR);
   }
 
+ done:
+  _enable();
   return rlen;
 }
 
