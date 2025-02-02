@@ -146,6 +146,7 @@ char fujicom_command_read(cmdFrame_t far *cmd, uint8_t far *buf, uint16_t len)
     if (ck1 != ck2) {
       consolef("FN checksum error\n");
       reply = 'E';
+      continue;
     }
 
     /* No errors, we're done! */
