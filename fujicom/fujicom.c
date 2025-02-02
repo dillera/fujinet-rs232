@@ -10,6 +10,7 @@
 #include <stdlib.h>
 
 #define TIMEOUT         100
+#define MAX_RETRIES	5
 #ifndef SERIAL_BPS
 #define SERIAL_BPS      9600
 #endif /* SERIAL_BPS */
@@ -67,13 +68,13 @@ uint8_t fujicom_cksum(uint8_t far *buf, uint16_t len)
  * @param c ptr to command frame to send
  * @return 'A'ck, or 'N'ak.
  */
-char _fujicom_send_command(cmdFrame_t far *c)
+char _fujicom_send_command(cmdFrame_t far *cmd)
 {
-  uint8_t *cc = (uint8_t *) c;
+  uint8_t *cc = (uint8_t *) cmd;
 
 
   /* Calculate checksum and place in frame */
-  c->cksum = fujicom_cksum(cc, 4);
+  cmd->cksum = fujicom_cksum(cc, 4);
 
   /* Assert DTR to indicate start of command frame */
   port_set_dtr(port, 1);
@@ -87,98 +88,111 @@ char _fujicom_send_command(cmdFrame_t far *c)
   return port_getc_nobuf(port, TIMEOUT);
 }
 
-char fujicom_command(cmdFrame_t far *c)
+char fujicom_command(cmdFrame_t far *cmd)
 {
   int reply;
 
 
   //port_disable_interrupts(port);
-  _fujicom_send_command(c);
+  _fujicom_send_command(cmd);
   reply = port_getc_nobuf(port, TIMEOUT);
   //port_enable_interrupts(port);
   return reply;
 }
 
-char fujicom_command_read(cmdFrame_t far *c, uint8_t far *buf, uint16_t len)
+char fujicom_command_read(cmdFrame_t far *cmd, uint8_t far *buf, uint16_t len)
 {
   int reply;
   uint16_t rlen;
-  int retries=25;
-  uint8_t ck1,ck2=0;
+  int retries;
+  uint8_t ck1, ck2;
 
   //port_disable_interrupts(port);
 
-  while (retries--)
-  {
-  	reply = _fujicom_send_command(c);
-	if (reply == 'A')
-		break;
-	else if (reply == 'N')
-		goto done;
-  }
+  for (retries = 0; retries < MAX_RETRIES; retries++) {
+    if (retries)
+      consolef("FN retry: %i\n", retries);
 
-  if (!retries)
-	  goto done;
+    reply = _fujicom_send_command(cmd);
+    if (reply == 'N')
+      break;
 
-  /* Get COMPLETE/ERROR */
-  reply = port_getc_nobuf(port, 15 * 1000);
-  if (reply == 'C') {
+    if (reply != 'A') {
+      consolef("FN send command bad: %c\n", reply);
+      continue;
+    }
+
+    /* Get COMPLETE/ERROR */
+    reply = port_getc_nobuf(port, 15 * 1000);
+    if (reply != 'C') {
+      consolef("FN complete fail: %c\n", reply);
+      continue;
+    }
+
     /* Complete, get payload */
     rlen = port_getbuf(port, buf, len, TIMEOUT);
-    if (rlen != len)
-      consolef("FN Read failed: Exp:%i Got:%i\n", len, rlen);
+    if (rlen != len) {
+      consolef("FN Read failed: Exp:%i Got:%i  Cmd: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x\n",
+	       len, rlen,
+	       cmd->device, cmd->comnd, cmd->aux1, cmd->aux2, cmd->cksum);
+      reply = 'E';
+      continue;
+    }
 
     /* Get Checksum byte, verify it. */
     ck1 = port_getc_nobuf(port, TIMEOUT);
     ck2 = fujicom_cksum(buf,len);
 
-    if (ck1 != ck2)
-    	return 'E';
-  }
-  else
-    consolef("FN Read bogus reply: 0x%02x\n", reply);
+    if (ck1 != ck2) {
+      consolef("FN checksum error\n");
+      reply = 'E';
+      continue;
+    }
 
- done:
+    /* No errors, we're done! */
+    break;
+  }
+
   //port_enable_interrupts(port);
   return reply;
 }
 
-char fujicom_command_write(cmdFrame_t far *c, uint8_t far *buf, uint16_t len)
+char fujicom_command_write(cmdFrame_t far *cmd, uint8_t far *buf, uint16_t len)
 {
   int reply;
   uint8_t ck;
-  int retries=25;
+  int retries = MAX_RETRIES;
 
   //port_disable_interrupts(port);
-  reply = _fujicom_send_command(c);
 
-  while(retries--)
-  {
-  	if (reply == 'A')
-    		break;
-	else if (reply == 'N')
-		goto done;
+  while (retries--) {
+    reply = _fujicom_send_command(cmd);
+    if (reply == 'N')
+      break;
+
+    if (reply != 'A')
+      continue;
+
+    /* Write the payload */
+    port_putbuf(port, buf, len);
+
+    /* Write the checksum */
+    ck = fujicom_cksum(buf, len);
+    port_putc_nobuf(port, ck);
+
+    /* Wait for ACK/NACK */
+    reply = port_getc_nobuf(port, TIMEOUT);
+    if (reply != 'A')
+      continue;
+
+    /* Wait for COMPLETE/ERROR */
+    reply = port_getc_nobuf(port, TIMEOUT);
+    if (reply != 'C')
+      continue;
+
+    break;
   }
 
-  if (!retries)
-	  goto done;
-
-  /* Write the payload */
-  port_putbuf(port, buf, len);
-
-  /* Write the checksum */
-  ck = fujicom_cksum(buf, len);
-  port_putc_nobuf(port, ck);
-
-  /* Wait for ACK/NACK */
-  reply = port_getc_nobuf(port, TIMEOUT);
-  if (reply != 'A')
-    goto done;
-
-  /* Wait for COMPLETE/ERROR */
-  reply = port_getc_nobuf(port, TIMEOUT);
-
- done:
   //port_enable_interrupts(port);
   return reply;
 }
