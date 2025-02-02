@@ -59,8 +59,7 @@ uint16_t Init_cmd(SYSREQ far *req)
   fujicom_init();
   check_uart();
 
-  // FIXME - check if /NOTIME was passed on command line
-  err = get_set_time(1);
+  err = get_set_time(!getenv("NOTIME"));
 
   // If get_set_time returned error, FujiNet is probably not connected
   if (err) {
@@ -111,6 +110,7 @@ uint8_t get_set_time(uint8_t set_flag)
   uint16_t year_wcen;
 
 
+  consolef("GET SET TIME: %i\n", set_flag);
   cmd.device = DEVICEID_APETIME;
   cmd.comnd = APETIMECMD_GETTZTIME;
 

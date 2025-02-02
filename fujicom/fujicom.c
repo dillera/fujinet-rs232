@@ -67,13 +67,13 @@ uint8_t fujicom_cksum(uint8_t far *buf, uint16_t len)
  * @param c ptr to command frame to send
  * @return 'A'ck, or 'N'ak.
  */
-char _fujicom_send_command(cmdFrame_t far *c)
+char _fujicom_send_command(cmdFrame_t far *cmd)
 {
-  uint8_t *cc = (uint8_t *) c;
+  uint8_t *cc = (uint8_t *) cmd;
 
 
   /* Calculate checksum and place in frame */
-  c->cksum = fujicom_cksum(cc, 4);
+  cmd->cksum = fujicom_cksum(cc, 4);
 
   /* Assert DTR to indicate start of command frame */
   port_set_dtr(port, 1);
@@ -87,26 +87,26 @@ char _fujicom_send_command(cmdFrame_t far *c)
   return port_getc_nobuf(port, TIMEOUT);
 }
 
-char fujicom_command(cmdFrame_t far *c)
+char fujicom_command(cmdFrame_t far *cmd)
 {
   int reply;
 
 
   //port_disable_interrupts(port);
-  _fujicom_send_command(c);
+  _fujicom_send_command(cmd);
   reply = port_getc_nobuf(port, TIMEOUT);
   //port_enable_interrupts(port);
   return reply;
 }
 
-char fujicom_command_read(cmdFrame_t far *c, uint8_t far *buf, uint16_t len)
+char fujicom_command_read(cmdFrame_t far *cmd, uint8_t far *buf, uint16_t len)
 {
   int reply;
   uint16_t rlen;
 
 
   //port_disable_interrupts(port);
-  reply = _fujicom_send_command(c);
+  reply = _fujicom_send_command(cmd);
   if (reply != 'A')
     goto done;
 
@@ -116,7 +116,9 @@ char fujicom_command_read(cmdFrame_t far *c, uint8_t far *buf, uint16_t len)
     /* Complete, get payload */
     rlen = port_getbuf(port, buf, len, TIMEOUT);
     if (rlen != len)
-      consolef("FN Read failed: Exp:%i Got:%i\n", len, rlen);
+      consolef("FN Read failed: Exp:%i Got:%i  Cmd: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x\n",
+	       len, rlen,
+	       cmd->device, cmd->comnd, cmd->aux1, cmd->aux2, cmd->cksum);
 
     /* Get Checksum byte, we don't use it. */
     port_getc_nobuf(port, TIMEOUT);
@@ -130,14 +132,14 @@ char fujicom_command_read(cmdFrame_t far *c, uint8_t far *buf, uint16_t len)
   return reply;
 }
 
-char fujicom_command_write(cmdFrame_t far *c, uint8_t far *buf, uint16_t len)
+char fujicom_command_write(cmdFrame_t far *cmd, uint8_t far *buf, uint16_t len)
 {
   int reply;
   uint8_t ck;
 
 
   //port_disable_interrupts(port);
-  reply = _fujicom_send_command(c);
+  reply = _fujicom_send_command(cmd);
   if (reply != 'A')
     goto done;
 
