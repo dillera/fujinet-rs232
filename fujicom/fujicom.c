@@ -118,14 +118,14 @@ char fujicom_command_read(cmdFrame_t far *cmd, uint8_t far *buf, uint16_t len)
       break;
 
     if (reply != 'A') {
-      consolef("FN send command bad: %c\n", reply);
+      consolef("FN send command bad: 0x%02x\n", reply);
       continue;
     }
 
     /* Get COMPLETE/ERROR */
     reply = port_getc_nobuf(port, 15 * 1000);
     if (reply != 'C') {
-      consolef("FN complete fail: %c\n", reply);
+      consolef("FN complete fail: 0x%02x\n", reply);
       continue;
     }
 
