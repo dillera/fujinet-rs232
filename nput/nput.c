@@ -8,13 +8,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "fujicom.h"
+#include <dos.h>
 
 /* buffers for commands like OPEN are expected to be 256 bytes */
 unsigned char url[256];
 
 /* 512 byte buffer used for copy. */
-unsigned char buf[512];
+unsigned char buf[8192];
+
+/* Register packs for communicating with INT F5 */
+union REGS r;
+struct SREGS sr;
 
 /**
  * @brief main nput function
@@ -26,53 +30,63 @@ int nput(char *src, char *dst)
 {
 	FILE *fp = fopen(src,"rb");
 	int err  = 0;
-	cmdFrame_t c;
 	unsigned long total=0;
 
-	fujicom_init();
+	strcpy(url,dst);
 
 	/* Perform OPEN command */
-	c.ddev   = 0x71;
-	c.dcomnd = 'O';
-	c.daux1  = 0x08; /* WRITE */
-	c.daux2  = 0x00; /* NO TRANSLATION */
-	strcpy(url,dst);
-	fujicom_command_write(&c,url,sizeof(url));
+        r.h.ah   = 0x80;
+	r.h.al   = 0x71;
+	r.h.cl   = 'O';
+	r.h.dl   = 0x08; /* WRITE */
+	r.h.dh   = 0x00; /* NO TRANSLATION */
 
-	if (fujicom_command_write(&c,url,sizeof(url)) != 'C')
+	sr.es    = FP_SEG(url);
+	r.x.bx   = FP_OFF(url);
+	r.x.di   = sizeof(url);
+	int86x(0xF5,&r,&r,&sr);
+
+	if (r.h.al != 'C')
 	{
 		printf("\nCould not open destination file. Terminating.\n");
 
-		c.ddev = 0x71;
-		c.dcomnd = 'C';
-		fujicom_command(&c);
+		r.h.ah = 0x00;
+		r.h.al = 0x71;
+		r.h.cl = 'C';
+		int86(0xF5,&r,&r);
 
-		fujicom_done();
 		return 2;
 	}
 
 	while (!feof(fp))
 	{
-		int l = fread(buf,1,512,fp);
+		int l = fread(buf,1,sizeof(buf),fp);
 
 		if (!l)
 			break;
+
+		r.h.ah = 0x80;		
+		r.h.al = 0x71;
+		r.h.cl = 'W';
+		r.x.dx = l;
 		
-		c.ddev = 0x71;
-		c.dcomnd = 'W';
-		c.daux1 = l & 0xFF;
-		c.daux2 = l >> 8;
-		if (fujicom_command_write(&c,buf,l) != 'C')
+		sr.es  = FP_SEG(buf);
+		r.x.bx = FP_OFF(buf);
+		r.x.di = l;
+
+		int86x(0xF5,&r,&r,&sr);
+
+		if (r.h.al != 'C')
 		{
 			printf("\nWrite error. Terminating\n");
 			
-			c.ddev = 0x71;
-			c.dcomnd = 'C';
-			fujicom_command(&c);
+			r.h.ah = 0x00;
+			r.h.al = 0x71;
+			r.h.cl = 'C';
+			int86(0xF5,&r,&r);
 
 			fclose(fp);
 			err = 0xff;
-			fujicom_done();
 			break;
 		}
 

@@ -1,0 +1,6 @@
+To build, 
+
+```
+tcc nput
+```
+
