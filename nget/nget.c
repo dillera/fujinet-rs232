@@ -8,13 +8,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "fujicom.h"
+#include <dos.h>
 
 /* buffers for commands like OPEN are expected to be 256 bytes */
 unsigned char url[256];
 
-/* 512 byte buffer used for copy. */
-unsigned char buf[512];
+/* large byte buffer used for copy. */
+unsigned char buf[8192];
 
 /* Status structure */
 struct _status
@@ -23,6 +23,10 @@ struct _status
 	unsigned char connected; /* Are we connected? 		*/
 	unsigned char error;	 /* error code	1-255		*/
 } status;
+
+/* Register packs for int86x() */
+union REGS r;
+struct SREGS sr;
 
 /**
  * @brief main nget function
@@ -34,11 +38,8 @@ int nget(char *src, char *dst)
 {
 	FILE *fp = fopen(dst,"wb");
 	int err  = 0;
-	cmdFrame_t c;
 	unsigned long total=0;
 	char *username=NULL, *password=NULL;
-
-	fujicom_init();
 
 	if ((src[0] != 'N') && (src[1] != ':'))
 	{
@@ -57,70 +58,112 @@ int nget(char *src, char *dst)
 
 	if (username)
 	{
-		/* Perform username command */
-		c.ddev = 0x71;
-		c.dcomnd = 0xFD;
-		c.daux1 = c.daux2 = 0x00;
 		memset(url,0,sizeof(url));
 		strcpy(url,username);
-		fujicom_command_write(&c,url,sizeof(url));
+
+		/* Perform username command */
+		r.h.ah = 0x80;
+		r.h.al = 0x71;
+		r.h.cl = 0xFD;
+		r.x.dx = 0x0000;
+
+		sr.es  = FP_SEG(&url);
+		r.x.bx = FP_OFF(&url);
+		r.x.di = sizeof(url);
+
+		int86x(0xF5,&r,&r,&sr);
 	}
 
 	if (password)
 	{
-		/* Perform password command */
-		c.ddev = 0x71;
-		c.dcomnd = 0xFE;
-		c.daux1 = c.daux2 = 0x00;
 		memset(url,0,sizeof(url));
 		strcpy(url,password);
-		fujicom_command_write(&c,url,sizeof(url));
+
+		/* Perform password command */
+		r.h.ah = 0x80;
+		r.h.al = 0x71;
+		r.h.cl = 0xFE;
+		r.x.dx = 0x0000;
+
+		sr.es  = FP_SEG(&url);
+		r.x.bx = FP_OFF(&url);
+		r.x.di = sizeof(url);
+
+		int86x(0xF5,&r,&r,&sr);
 	}
 
 	memset(url,0,sizeof(url));
+	strcpy(url,src);
 
 	/* Perform OPEN command */
-	c.ddev   = 0x71;
-	c.dcomnd = 'O';
-	c.daux1  = 0x04; /* READ ONLY */
-	c.daux2  = 0x00; /* NO TRANSLATION */
-	strcpy(url,src);
-	fujicom_command_write(&c,url,sizeof(url));
+        r.h.ah   = 0x80;
+	r.h.al   = 0x71;
+	r.h.cl   = 'O';
+	r.h.dl   = 0x04; /* READ ONLY */
+	r.h.dh   = 0x00; /* NO TRANSLATION */
+	
+	sr.es    = FP_SEG(&url);
+	r.x.bx   = FP_OFF(&url);
+	r.x.di   = sizeof(url);
+
+	int86x(0xF5,&r,&r,&sr);
+
+ 	delay(10);
 
 	/* Perform initial status command */
-	c.ddev   = 0x71;
-	c.dcomnd = 'S';
-	c.daux1  = 0x00;
-	c.daux2  = 0x00;
-	fujicom_command_read(&c,(unsigned char *)&status,sizeof(status));
+	r.h.ah   = 0x40;
+	r.h.al   = 0x71;
+	r.h.cl   = 'S';
+	r.h.dh   = 0x00;
+	r.h.dl   = 0x00;
 
-	if (status.error > 1)
+	sr.es    = FP_SEG(&status);
+	r.x.bx   = FP_OFF(&status);
+	r.x.di   = sizeof(status);
+
+	int86x(0xF5,&r,&r,&sr);
+
+	if (status.error > 1 && !status.bw)
 	{
 		printf("\nOPEN ERROR: %u\n",status.error);
 		return status.error;
 	}
 
-	if (!status.connected)
+	/* if (!status.connected)
 	{
 		printf("\nOPEN ERROR: Host immediately disconnected.\n");
 		return 0xFF;
-	}
+	} */
 
-	while (status.error != 136)
+	while (1)
 	{
-		int bw = (status.bw > 512 ? 512 : status.bw);
+		int bw = (status.bw > sizeof(buf) ? sizeof(buf) : status.bw);
 		char reply = 0;
 
+		if (!bw && status.error == 136)
+			break;
+		else if (!bw)
+			continue;
+
+		delay(1);
+
 		/* Do read */
-		c.dcomnd = 'R';
-		c.daux1  = bw & 0xFF;
-		c.daux2  = bw >> 8;
-		reply = fujicom_command_read(&c,buf,bw);
+		r.h.ah   = 0x40;
+		r.h.al   = 0x71;
+		r.h.cl   = 'R';
+		r.x.dx   = bw;
+
+		sr.es    = FP_SEG(&buf);
+		r.x.bx   = FP_OFF(&buf);
+		r.x.di   = bw;
+
+		int86x(0xF5,&r,&r,&sr);
+		reply = r.h.al;
 
 		if (reply != 'C')
 		{
-			printf("\nREAD ERROR AT %lu bytes.\n",total);
-			return 144;
+		 	printf("\nREAD ERROR AT %lu bytes. Reply was %c\n",total,reply);
+		 	return 144;
 		}
 
 		/* Do write */
@@ -130,26 +173,33 @@ int nget(char *src, char *dst)
 
 		printf("%10lu bytes transferred.\r",total);
 
+		delay(1);
+
 		/* Do next status */
-		c.ddev = 0x71;
-		c.dcomnd = 'S';
-		c.daux1 = 0x00;
-		c.daux2 = 0x00;
-		fujicom_command_read(&c,
-					(unsigned char *)&status, 
-					sizeof(status));
+		r.h.ah = 0x40;
+		r.h.al = 0x71;
+		r.h.cl = 'S';
+		r.h.dl = 0x00;
+		r.h.dh = 0x00;
+
+		sr.es  = FP_SEG(&status);
+		r.x.bx = FP_OFF(&status);
+		r.x.di = sizeof(status);
+
+		int86x(0xF5,&r,&r,&sr);
 	}
 
 bye:
 	/* Perform CLOSE command */
-	c.ddev   = 0x71;
-	c.dcomnd = 'C';
-	fujicom_command(&c);
+	r.h.ah   = 0x00;
+	r.h.al   = 0x71;
+	r.h.cl   = 'C';
+	r.x.dx   = 0x0000;
+
+	int86(0xF5,&r,&r);
 
 	fclose(fp);
 	
-	fujicom_done();
-
 	return err;
 }
 
