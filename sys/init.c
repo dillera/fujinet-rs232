@@ -35,7 +35,6 @@ extern void setf5(void);
 uint8_t get_set_time(uint8_t set_flag);
 void check_uart();
 uint16_t parse_config(const uint8_t far *config_sys);
-void dump_environ();
 
 uint16_t Init_cmd(SYSREQ far *req)
 {
@@ -46,13 +45,8 @@ uint16_t Init_cmd(SYSREQ far *req)
   regs.h.ah = 0x30;
   intdos(&regs, &regs);
   consolef("\nFujiNet driver " VERSION " loaded on MS-DOS %i.%i\n", regs.h.al, regs.h.ah);
-  consolef("ENVIRON: 0x%08lx 0x%08lx  0x%04x - 0x%04x = %i  %04x\n",
-	   (uint32_t) environ, (uint32_t) environ[0],
-	   &driver_end, &config_env, (uint16_t) &driver_end - (uint16_t) &config_env,
-	   sizeof(environ[0]));
   unused = parse_config(req->req_type.init_req.BPB_ptr);
   environ = (char **) &config_env;
-  dump_environ();
 
   req->req_type.init_req.end_ptr = MK_FP(getCS(), (uint8_t *) &driver_end - unused);
 
@@ -72,7 +66,7 @@ uint16_t Init_cmd(SYSREQ far *req)
     int idx;
 
 
-    req->req_type.init_req.num_of_units = 1; // FN_MAX_DEV;
+    req->req_type.init_req.num_of_units = FN_MAX_DEV;
 
     for (idx = 0; idx < FN_MAX_DEV; idx++) {
       /* 5.25" 360k BPB */
@@ -110,7 +104,6 @@ uint8_t get_set_time(uint8_t set_flag)
   uint16_t year_wcen;
 
 
-  consolef("GET SET TIME: %i\n", set_flag);
   cmd.device = DEVICEID_APETIME;
   cmd.comnd = APETIMECMD_GETTZTIME;
 
@@ -203,11 +196,6 @@ uint16_t parse_config(const uint8_t far *config_sys)
   uint8_t eq_flag;
 
 
-  printDTerm("CONFIG.SYS: $");
-  for (cfg = config_sys; cfg && *cfg && *cfg != '\r' && *cfg != '\n'; cfg++)
-    printChar(*cfg);
-  printDTerm("\r\n$");
-
   *cfg_env = NULL;
   buf = (char *) &cfg_env[1];
   buf_max = (char *) cfg_env + ((uint16_t) &driver_end - (uint16_t) &config_env);
@@ -239,8 +227,6 @@ uint16_t parse_config(const uint8_t far *config_sys)
       cfg++;
   }
 
-  consolef("Options count: %i\n", count);
-  
   // Start strings after pointer table + NULL
   buf = ((char *) cfg_env) + sizeof(char *) * (count + 1);
 
@@ -275,24 +261,7 @@ uint16_t parse_config(const uint8_t far *config_sys)
   }
 
   cfg_env[idx] = 0;
-  dumpHex((uint8_t *) &config_env, buf - (char *) &config_env);
 
  done:
   return buf - (char *) &config_env;
-}
-
-void dump_environ()
-{
-  int idx;
-  const char *p;
-
-
-  for (idx = 0; environ[idx]; idx++) {
-    consolef("0x%08lx ", (uint32_t) environ[idx]);
-    for (p = environ[idx]; p && *p; p++)
-      printChar(*p);
-    consolef("\n");
-  }
-  consolef("Total: %i\n", idx);
-  return;
 }

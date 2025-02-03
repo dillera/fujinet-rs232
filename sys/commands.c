@@ -34,10 +34,10 @@ uint16_t Build_bpb_cmd(SYSREQ far *req)
 
   if (req->unit > FN_MAX_DEV) {
     consolef("Invalid BPB unit: %i\n", req->unit);
-    return ERROR_BIT;
+    return ERROR_BIT | UNKNOWN_UNIT;
   }
 
-  cmd.device = DEVICEID_DISK;  /* Drive 1 */
+  cmd.device = DEVICEID_DISK + req->unit;
   cmd.comnd = 'R'; /* Read */
   cmd.aux1 = cmd.aux2 = 0;
 
@@ -46,7 +46,7 @@ uint16_t Build_bpb_cmd(SYSREQ far *req)
   reply = fujicom_command_read(&cmd, buf, sizeof(sector_buf));
   if (reply != 'C') {
     consolef("FujiNet read fail: %i\n", reply);
-    return ERROR_BIT;
+    return ERROR_BIT | READ_FAULT;
   }
 
   //dumpHex(buf[128*2], 128);
@@ -80,13 +80,18 @@ uint16_t Input_cmd(SYSREQ far *req)
   uint8_t far *buf = req->req_type.i_o_req.buffer_ptr;
 
 
+  if (req->unit > FN_MAX_DEV) {
+    consolef("Invalid BPB unit: %i\n", req->unit);
+    return ERROR_BIT | UNKNOWN_UNIT;
+  }
+
 #if 0
   dumpHex((uint8_t far *) req, req->length);
   consolef("SECTOR: 0x%x\n", sector);
 #endif
   
   for (idx = 0; idx < req->req_type.i_o_req.count; idx++, sector++) {
-    cmd.device = DEVICEID_DISK;  /* Drive 1 */
+    cmd.device = DEVICEID_DISK + req->unit;
     cmd.comnd = 'R'; /* Read */
     cmd.aux1 = sector & 0xFF;
     cmd.aux2 = sector >> 8;
@@ -96,7 +101,7 @@ uint16_t Input_cmd(SYSREQ far *req)
       break;
   }
   if (!idx)
-    return ERROR_BIT;
+    return ERROR_BIT | GENERAL_FAIL;
   
   req->req_type.i_o_req.count = idx;
   return OP_COMPLETE;
