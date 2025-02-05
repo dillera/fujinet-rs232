@@ -68,7 +68,7 @@ uint8_t fujicom_cksum(uint8_t far *buf, uint16_t len)
  * @param c ptr to command frame to send
  * @return 'A'ck, or 'N'ak.
  */
-char _fujicom_send_command(cmdFrame_t far *cmd)
+int _fujicom_send_command(cmdFrame_t far *cmd)
 {
   uint8_t *cc = (uint8_t *) cmd;
 
@@ -88,7 +88,7 @@ char _fujicom_send_command(cmdFrame_t far *cmd)
   return port_getc_nobuf(port, TIMEOUT);
 }
 
-char fujicom_command(cmdFrame_t far *cmd)
+int fujicom_command(cmdFrame_t far *cmd)
 {
   int reply;
 
@@ -103,7 +103,7 @@ char fujicom_command(cmdFrame_t far *cmd)
   return reply;
 }
 
-char fujicom_command_read(cmdFrame_t far *cmd, uint8_t far *buf, uint16_t len)
+int fujicom_command_read(cmdFrame_t far *cmd, uint8_t far *buf, uint16_t len)
 {
   int reply;
   uint16_t rlen;
@@ -163,7 +163,7 @@ char fujicom_command_read(cmdFrame_t far *cmd, uint8_t far *buf, uint16_t len)
   return reply;
 }
 
-char fujicom_command_write(cmdFrame_t far *cmd, uint8_t far *buf, uint16_t len)
+int fujicom_command_write(cmdFrame_t far *cmd, uint8_t far *buf, uint16_t len)
 {
   int reply;
   uint8_t ck;

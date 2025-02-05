@@ -105,7 +105,7 @@ uint8_t get_set_time(uint8_t set_flag)
 
 
   cmd.device = DEVICEID_APETIME;
-  cmd.comnd = APETIMECMD_GETTZTIME;
+  cmd.comnd = CMD_APETIME_GETTZTIME;
 
   reply = fujicom_command_read(&cmd, (uint8_t *) &cur_time, sizeof(cur_time));
 
