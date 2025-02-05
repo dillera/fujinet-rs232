@@ -480,6 +480,23 @@ void port_wait_for_tx_empty(PORT far *port)
   return;
 }
 
+void port_wait_for_rx_empty(PORT far *port)
+{
+  int val;
+
+
+  for (;;) {
+    val = inportb(port->uart_base + LSR);
+    if (!(val & 1))
+      break;
+
+    // Discard byte
+    inportb(port->uart_base + RBR);
+  }
+
+  return;
+}
+
 int port_identify_uart(PORT far *port)
 {
   int val;

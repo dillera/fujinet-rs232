@@ -94,6 +94,9 @@ char fujicom_command(cmdFrame_t far *cmd)
 
 
   //port_disable_interrupts(port);
+  // Flush any bytes left in the buffer
+  port_wait_for_rx_empty(port);
+
   _fujicom_send_command(cmd);
   reply = port_getc_nobuf(port, TIMEOUT);
   //port_enable_interrupts(port);
@@ -112,6 +115,9 @@ char fujicom_command_read(cmdFrame_t far *cmd, uint8_t far *buf, uint16_t len)
   for (retries = 0; retries < MAX_RETRIES; retries++) {
     if (retries)
       consolef("FN retry: %i\n", retries);
+
+    // Flush any bytes left in the buffer
+    port_wait_for_rx_empty(port);
 
     reply = _fujicom_send_command(cmd);
     if (reply == 'N')
@@ -166,6 +172,9 @@ char fujicom_command_write(cmdFrame_t far *cmd, uint8_t far *buf, uint16_t len)
   //port_disable_interrupts(port);
 
   while (retries--) {
+    // Flush any bytes left in the buffer
+    port_wait_for_rx_empty(port);
+
     reply = _fujicom_send_command(cmd);
     if (reply == 'N')
       break;

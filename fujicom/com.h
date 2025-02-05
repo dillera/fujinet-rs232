@@ -71,6 +71,7 @@ extern uint16_t port_getbuf(PORT far *port, uint8_t far *buf, uint16_t len, uint
 extern void port_putc_nobuf(PORT far *port, uint8_t c);
 extern int port_getc_nobuf(PORT far *port, uint16_t timeout);
 extern void port_wait_for_tx_empty(PORT far *part);
+extern void port_wait_for_rx_empty(PORT far *port);
 extern int port_identify_uart(PORT far *port);
 
 /*
