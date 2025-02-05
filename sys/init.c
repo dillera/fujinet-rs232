@@ -210,6 +210,9 @@ uint16_t parse_config(const uint8_t far *config_sys)
   // Skip any trailing spaces
   while (*cfg == ' ')
     cfg++;
+  if (!*cfg || *cfg == '\r' || *cfg == '\n')
+    goto done;
+
   bcfg = cfg;
 
   // Count how many options we have
