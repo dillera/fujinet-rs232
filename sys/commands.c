@@ -38,7 +38,7 @@ uint16_t Build_bpb_cmd(SYSREQ far *req)
   }
 
   cmd.device = DEVICEID_DISK + req->unit;
-  cmd.comnd = 'R'; /* Read */
+  cmd.comnd = CMD_READ;
   cmd.aux1 = cmd.aux2 = 0;
 
   // DOS gave us a buffer to use?
@@ -89,10 +89,15 @@ uint16_t Input_cmd(SYSREQ far *req)
   dumpHex((uint8_t far *) req, req->length);
   consolef("SECTOR: 0x%x\n", sector);
 #endif
-  
+
   for (idx = 0; idx < req->req_type.i_o_req.count; idx++, sector++) {
+    if (sector >= fn_bpb_table[req->unit].num_sectors) {
+      consolef("FN Invalid sector read %i on %c:\n", sector, 'A' + req->unit);
+      return ERROR_BIT | NOT_FOUND;
+    }
+
     cmd.device = DEVICEID_DISK + req->unit;
-    cmd.comnd = 'R'; /* Read */
+    cmd.comnd = CMD_READ;
     cmd.aux1 = sector & 0xFF;
     cmd.aux2 = sector >> 8;
 

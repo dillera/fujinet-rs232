@@ -7,6 +7,13 @@
 
 #include <stdint.h>
 
+#define FUJINET_INT     0xF5
+#define FUJIINT_NONE    0x00
+#define FUJIINT_READ    0x40
+#define FUJIINT_WRITE   0x80
+
+#define FUJICOM_TIMOUT  -1
+
 // FIXME - get these constants and structs from
 //         fujinet-firmware/lib/bus/rs232/rs232.h instead of
 //         redefining them here
@@ -36,9 +43,16 @@ enum {
 };
 
 enum {
-  APETIMECMD_GETTIME    = 0x93,
-  APETIMECMD_SETTZ      = 0x99,
-  APETIMECMD_GETTZTIME  = 0x9A,
+  CMD_OPEN                      = 'O',
+  CMD_CLOSE                     = 'C',
+  CMD_READ                      = 'R',
+  CMD_WRITE                     = 'W',
+  CMD_STATUS                    = 'S',
+  CMD_APETIME_GETTIME           = 0x93,
+  CMD_APETIME_SETTZ             = 0x99,
+  CMD_APETIME_GETTZTIME         = 0x9A,
+  CMD_USERNAME                  = 0xFD,
+  CMD_PASSWORD                  = 0xFE,
 };
 
 /**
@@ -58,7 +72,7 @@ uint8_t fujicom_cksum(uint8_t far *buf, uint16_t len);
  * @param cmdFrame Pointer to command frame
  * @return 'C'omplete, 'E'rror, or 'N'ak
  */
-char fujicom_command(cmdFrame_t far *c);
+int fujicom_command(cmdFrame_t far *c);
 
 /**
  * @brief send fujinet frame and read payload
@@ -66,7 +80,7 @@ char fujicom_command(cmdFrame_t far *c);
  * @param buf Pointer to buffer to receive
  * @param len Expected buffer length
  */
-char fujicom_command_read(cmdFrame_t far *c, uint8_t far *buf, uint16_t len);
+int fujicom_command_read(cmdFrame_t far *c, uint8_t far *buf, uint16_t len);
 
 /**
  * @brief send fujinet frame and write payload
@@ -74,7 +88,7 @@ char fujicom_command_read(cmdFrame_t far *c, uint8_t far *buf, uint16_t len);
  * @param buf pointer to buffer to send.
  * @param len Length of buffer to send.
  */
-char fujicom_command_write(cmdFrame_t far *c, uint8_t far *buf, uint16_t len);
+int fujicom_command_write(cmdFrame_t far *c, uint8_t far *buf, uint16_t len);
 
 /**
  * @brief end fujicom
