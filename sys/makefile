@@ -5,7 +5,7 @@ CC      = wcc -q
 CFLAGS  = -0 -bt=dos -ms -I../fujicom -s -osh -zu $(CPPFLAGS)
 LD	= wlink OPTION quiet
 LDFLAGS = &
-	SYSTEM dos &
+	SYSTEM dos com &
 	ORDER &
 	  clname SYS_HEADER &
 	  clname DATA &
