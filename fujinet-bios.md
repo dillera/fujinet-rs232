@@ -2,6 +2,9 @@
 
 The FujiNet PC BIOS Specification reserves software INT F5 to provide a standardized way to communicate with the FujiNet, regardless of how it is physically connected. It is designed to send any command that the PC FujiNet can interpret, to any of its virtual devices, with or without payload, to or from the PC or FujiNet.
 
+The current version of this document may be found on wiki: 
+https://github.com/FujiNetWIFI/fujinet-firmware/wiki/MS%E2%80%90DOS-BIOS-Specification
+
 ## Canonical implementation
 
 Can be found here: https://github.com/FujiNetWIFI/fujinet-rs232/tree/main/sys
