@@ -21,6 +21,9 @@ jobs:
         id: short-sha
         run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
+      - name: Git Safe Directory
+        run: git config --global --add safe.directory ${{ github.workspace }}
+
       - name: Setup Watcom 
         uses: open-watcom/setup-watcom@v0
         with:
