@@ -51,7 +51,6 @@ jobs:
         with:
           body: | 
             `fujinet.sys` MS-DOS driver for RS232 FujiNet
-          name: fujinet.sys - {{ steps.short-sha.outputs.sha }}
           tag_name: ${{ steps.tag-version.outputs.new_tag }}
           prerelease: true 
           files: ${{ github.workspace }}/sys/fujinet-${{ steps.short-sha.outputs.sha }}.sys
