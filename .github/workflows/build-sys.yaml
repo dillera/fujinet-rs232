@@ -1,6 +1,12 @@
 name: Build fujinet.sys
 
 on: 
+  push: 
+    branches:
+      - main
+    paths:
+      - 'sys/**'
+      - 'fujicom/**'
   workflow_dispatch:
     
 jobs:
@@ -36,7 +42,7 @@ jobs:
         with:
           body: | 
             `fujinet.sys` MS-DOS driver for RS232 FujiNet
-          name: fujinet.sys - Nightly Build
+          name: fujinet.sys - {{ steps.short-sha.outputs.sha }}
           tag_name: fujinet.sys
           prerelease: true 
           files: ${{ github.workspace }}/sys/fujinet-${{ steps.short-sha.outputs.sha }}.sys
