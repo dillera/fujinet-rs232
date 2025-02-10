@@ -1,0 +1,40 @@
+name: Build fujinet.sys
+
+on: 
+  workflow_dispatch:
+    
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      
+      - name: Get short SHA
+        id: short-sha
+        run: echo "::set-output name=sha::$(git rev-parse --short HEAD)"
+
+      - name: Setup Watcom 
+        uses: open-watcom/setup-watcom@v0
+        with:
+          version: "2.0"
+      
+      - name: Build fujicom
+        working-directory: fujicom/
+        run: make
+
+      - name: Build fujinet.sys
+        working-directory: sys/
+        run: make
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: | 
+            `fujinet.sys` MS-DOS driver for RS232 FujiNet
+          name: fujinet.sys
+          prerelease: true 
+          files: ${{ github.workspace }}/sys/fujinet-${{ steps.short-sha.outputs.sha }}.sys
+          generate_release_notes: true 
+          make_latest: true 
