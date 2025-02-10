@@ -34,7 +34,8 @@ jobs:
         with:
           body: | 
             `fujinet.sys` MS-DOS driver for RS232 FujiNet
-          name: fujinet.sys
+          name: fujinet.sys - Nightly Build
+          tag_name: fujinet.sys
           prerelease: true 
           files: ${{ github.workspace }}/sys/fujinet-${{ steps.short-sha.outputs.sha }}.sys
           generate_release_notes: true 
