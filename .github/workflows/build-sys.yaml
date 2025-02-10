@@ -36,6 +36,12 @@ jobs:
         run: | 
           make
           cp fujinet.sys fujinet-${{ steps.short-sha.outputs.sha }}.sys
+      
+      - name: Bump version and push tag
+        id: tag-version
+        uses: ChloePlanet/github-tag-action@master
+        env:
+          WITH_V: true
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -43,7 +49,7 @@ jobs:
           body: | 
             `fujinet.sys` MS-DOS driver for RS232 FujiNet
           name: fujinet.sys - {{ steps.short-sha.outputs.sha }}
-          tag_name: fujinet.sys
+          tag_name: ${{ steps.tag-version.outputs.new_tag }}
           prerelease: true 
           files: ${{ github.workspace }}/sys/fujinet-${{ steps.short-sha.outputs.sha }}.sys
           generate_release_notes: true 
