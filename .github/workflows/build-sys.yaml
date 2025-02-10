@@ -13,7 +13,7 @@ jobs:
       
       - name: Get short SHA
         id: short-sha
-        run: echo "::set-output name=sha::$(git rev-parse --short HEAD)"
+        run: echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Setup Watcom 
         uses: open-watcom/setup-watcom@v0
@@ -27,7 +27,9 @@ jobs:
 
       - name: Build fujinet.sys
         working-directory: sys/
-        run: make
+        run: | 
+          make
+          cp fujinet.sys fujinet-${{ steps.short-sha.outputs.sha }}.sys
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
