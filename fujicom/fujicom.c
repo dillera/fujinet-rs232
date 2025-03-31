@@ -54,6 +54,14 @@ void fujicom_init(void)
     base = COM2_UART;
     irq = COM2_INTERRUPT;
     break;
+  case 3:
+    base = COM3_UART;
+    irq = COM3_INTERRUPT;
+    break;
+  case 4:
+    base = COM4_UART;
+    irq = COM4_INTERRUPT;
+    break;
   }
 
   port = port_open(&fn_port, base, irq);
