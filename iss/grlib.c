@@ -23,7 +23,7 @@ int gr_mode(int mode)
 	return r2.h.al;
 }
 
-int gr_color(char p, char c)
+void gr_color(char p, char c)
 {
 	union REGS r;
 
@@ -40,7 +40,7 @@ int gr_color(char p, char c)
 	int86(0x10,&r,0);
 }
 
-int gr_pset(int x, int y, char c)
+void gr_pset(int x, int y, char c)
 {
 	union REGS r;
 
@@ -53,7 +53,7 @@ int gr_pset(int x, int y, char c)
 	int86(0x10,&r,0);
 }
 
-int gr_text(int x, int y, char *s)
+void gr_text(int x, int y, char *s)
 {
 	union REGS r;
 
@@ -62,7 +62,7 @@ int gr_text(int x, int y, char *s)
 	r.h.bh = 0;
 	r.h.dh = y;
 	r.h.dl = x;
-	int86(0x10,&r,0);	
+	int86(0x10,&r,0);
 
 	/* Output characters */
 	while (*s)
@@ -70,7 +70,7 @@ int gr_text(int x, int y, char *s)
 		r.h.ah = 0x0e;
 		r.h.al = *s;
 		r.h.bl = 0x0f;
-	
+
 		int86(0x10,&r,0);
 
 		s++;
