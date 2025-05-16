@@ -19,12 +19,13 @@ int timeout=60000;
 void fetch(char *lat, char *lon, unsigned long *ts);
 void osd(char *lat, char *lon, unsigned long t);
 
-void main()
+int main()
 {
 	int oldmode = gr_mode(-1);
 
 	gr_mode(4);
 	gr_color(0,1);
+	gr_palette(1,0x0A);
 
 	while(1)
 	{
@@ -51,5 +52,5 @@ void main()
 
 bye:
 	gr_mode(oldmode);
-
+	return 0;
 }

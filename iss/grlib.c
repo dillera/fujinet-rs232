@@ -20,7 +20,22 @@ int gr_mode(int mode)
 
 	int86(0x10,&r1,&r2);
 
+	r1.h.ah = 0x05;
+	r1.h.al = 0x00;
+	int86(0x10,&r1,&r1);
+
 	return r2.h.al;
+}
+
+void gr_palette(unsigned char i, unsigned char c)
+{
+    union REGS r;
+
+    r.h.ah = 0x10;
+    r.h.al = 0x00;
+    r.h.bl = i;
+    r.h.bh = c;
+    int86(0x10,&r,0);
 }
 
 void gr_color(char p, char c)
@@ -70,7 +85,6 @@ void gr_text(int x, int y, char *s)
 		r.h.ah = 0x0e;
 		r.h.al = *s;
 		r.h.bl = 0x0f;
-
 		int86(0x10,&r,0);
 
 		s++;
