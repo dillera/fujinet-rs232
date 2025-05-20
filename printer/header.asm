@@ -25,10 +25,10 @@ _sys_hdr_ label near
 	extrn	Interrupt_:near
 
 	dd	-1
-	dw	2002h
+	dw	8000h
 	dw	Strategy_
 	dw	Interrupt_
-	db	8, 0, 0, 0, 0, 0, 0, 0
+	db	'P', 'R', 'N', ' ', ' ', ' ', ' ', ' '
 
 _SYS_HEADER ends
 

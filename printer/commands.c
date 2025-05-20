@@ -6,8 +6,6 @@
 #include <string.h>
 #include <dos.h>
 
-#undef DEBUG
-
 extern void End_code(void);
 
 static cmdFrame_t cmd; // FIXME - make this shared with init.c?
@@ -49,7 +47,14 @@ uint16_t Input_flush_cmd(SYSREQ far *req)
 
 uint16_t Output_cmd(SYSREQ far *req)
 {
-    return UNKNOWN_CMD;
+    char c;
+    cmd.device = 0x40;
+    cmd.comnd = 'W';
+    c=req->io.buffer_ptr[0];
+    if (fujicom_command_write(&cmd,&c,1) != 'C')
+        return ERROR_BIT | NOT_READY;
+
+    return OP_COMPLETE;
 }
 
 uint16_t Output_verify_cmd(SYSREQ far *req)
@@ -59,7 +64,7 @@ uint16_t Output_verify_cmd(SYSREQ far *req)
 
 uint16_t Output_status_cmd(SYSREQ far *req)
 {
-    return UNKNOWN_CMD;
+    return OP_COMPLETE;
 }
 
 uint16_t Output_flush_cmd(SYSREQ far *req)
@@ -74,12 +79,12 @@ uint16_t Ioctl_output_cmd(SYSREQ far *req)
 
 uint16_t Dev_open_cmd(SYSREQ far *req)
 {
-    return UNKNOWN_CMD;
+    return OP_COMPLETE;
 }
 
 uint16_t Dev_close_cmd(SYSREQ far *req)
 {
-  return UNKNOWN_CMD;
+  return OP_COMPLETE;
 }
 
 uint16_t Remove_media_cmd(SYSREQ far *req)
