@@ -15,8 +15,8 @@ LDFLAGS = &
 	OPTION MAP, NODEFAULTLIBS &
 	LIBPATH ../fujicom
 
-CFILES  = commands.c dispatch.c init.c print.c 
-AFILES  = header.asm 
+CFILES  = commands.c dispatch.c init.c print.c int17.c
+AFILES  = header.asm iwrap.asm
 OBJS = $(CFILES:.c=.obj) $(AFILES:.asm=.obj)
 
 $(TARGET): $(OBJS)

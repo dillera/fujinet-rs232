@@ -39,7 +39,7 @@ cmdFrame_t cmd;
 union REGS regs;
 extern void *config_env, *driver_end;
 
-extern void setf5(void);
+extern void set17(void);
 
 #pragma data_seg("_CODE")
 
@@ -68,6 +68,8 @@ uint16_t Init_cmd(SYSREQ far *req)
   check_uart();
 
   consolef("Installed\n");
+  set17();
+  consolef("INT 17 functions installed\n");
 
   return OP_COMPLETE;
 }

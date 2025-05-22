@@ -28,7 +28,7 @@ _sys_hdr_ label near
 	dw	8000h
 	dw	Strategy_
 	dw	Interrupt_
-	db	'P', 'R', 'N', ' ', ' ', ' ', ' ', ' '
+	db	'L', 'P', 'T', '1', ' ', ' ', ' ', ' '
 
 _SYS_HEADER ends
 
